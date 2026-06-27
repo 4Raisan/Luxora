@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int               @id @default(autoincrement())
+  email           String            @unique
+  passwordHash    String
+  steamId         String?
+  region          String            @default("USD")
+  whatsappNumber  String?
+  whatsappEnabled Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  categories      Category[]
+  notifications   NotificationLog[]
+}
+
+model Game {
+  id               Int           @id @default(autoincrement())
+  steamAppId       Int           @unique
+  name             String
+  imageUrl         String?
+  currentPrice     Float?
+  originalPrice    Float?
+  discountPercent  Int?
+  allTimeLowPrice  Float?
+  lastUpdated      DateTime      @updatedAt
+  categoryItems    CategoryItem[]
+}
+
+model Category {
+  id         Int            @id @default(autoincrement())
+  name       String
+  order      Int            @default(0)
+  userId     Int
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items      CategoryItem[]
+
+  @@index([userId])
+}
+
+model CategoryItem {
+  id         Int      @id @default(autoincrement())
+  categoryId Int
+  steamAppId Int
+  order      Int      @default(0)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  game       Game     @relation(fields: [steamAppId], references: [steamAppId], onDelete: Cascade)
+
+  @@unique([categoryId, steamAppId])
+  @@index([categoryId])
+}
+
+model NotificationLog {
+  id      Int      @id @default(autoincrement())
+  userId  Int
+  message String
+  sentAt  DateTime @default(now())
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
