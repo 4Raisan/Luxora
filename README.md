@@ -1,57 +1,93 @@
-# Real-Time Chat Room System
+# Steam Wishlist Monitor & Customizer (SteamA)
 
-A real-time chat room system implemented in Python 3 using the `websockets` library and `asyncio` for non-blocking asynchronous communication. This project demonstrates a Client-Server architecture and a Publisher-Subscriber (Pub-Sub) model.
+SteamA is a full-stack application for tracking Steam wishlist prices, organizing games with custom drag-and-drop categories, and sending WhatsApp alerts when prices hit all-time lows.
 
-## Features
+## Stack
 
-- **Concurrent Client Handling**: The server concurrently handles multiple client connections asynchronously.
-- **Unique Usernames**: Users must log in with a unique username; duplicate usernames are rejected by the server.
-- **Chat Rooms (Pub-Sub Model)**: Users can join specific chat rooms (e.g., "sports", "technology"). The server acts as a broker to broadcast messages to all subscribers in that room.
-- **Message History**: Chat history is persisted in text files (e.g., `sports.txt`). Late joining clients automatically receive the last 5 messages from the room's history.
-- **Non-blocking Input**: The client utilizes background tasks to display incoming messages smoothly without interrupting the user's typing prompt.
+- **Backend**: Node.js, Express, Prisma ORM, SQLite, node-cron
+- **Frontend**: Vite, React, Vanilla CSS
+- **Integrations**: Steam wishlist APIs, CheapShark, WhatsApp Web (with mock mode)
 
-## Prerequisites
+## Monorepo Structure
 
-- Python 3.7 or higher
-- `websockets` library
+```
+/backend
+  /src
+    /services
+      steamService.js
+      whatsappService.js
+    /jobs
+      cronJob.js
+    server.js
+  /prisma
+    schema.prisma
+  package.json
+  .env.example
 
-### Installing Dependencies
+/frontend
+  /src
+    /pages
+      Dashboard.jsx
+      Auth.jsx
+    /components
+      CategorySidebar.jsx
+    App.jsx
+    index.css
+  /public
+  package.json
+  vite.config.js
+  index.html
+```
 
-You can install the required `websockets` library using `pip`:
+## Setup
+
+1. Install dependencies:
 
 ```bash
-pip install websockets
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
-## How to Run
-
-### 1. Start the Chat Server
-The server must be started first. It listens for incoming WebSocket connections on `ws://localhost:2024`.
-
-Open a terminal and run:
-```bash
-python chat_server.py
-```
-*Expected Output:*
-```text
-[SERVER] Starting Chat Manager on ws://localhost:2024...
-```
-
-### 2. Start Chat Clients
-Open one or more separate terminals to act as connected users.
+2. Configure backend environment:
 
 ```bash
-python chat_client.py
+cp backend/.env.example backend/.env
 ```
 
-### 3. Usage Flow
-- **Login**: Upon running the client, you will be prompted for a username.
-- **Join Room**: Enter the name of the room you wish to join (e.g., `lobby`, `gaming`). If the room doesn't exist, it will be created on the fly.
-- **Chatting**: Start typing your messages and press `Enter`. Other users in the same room will see your messages in real-time.
-- **Exit**: Type `exit` or `quit` to leave the chat room.
+3. Generate Prisma client and migrate:
 
-## Project Structure
+```bash
+cd backend
+npm run prisma:generate
+npx prisma migrate dev --name init
+```
 
-- `chat_server.py`: Contains the server-side logic, connection handling, chat room management, data structures for connected users, and message logging.
-- `chat_client.py`: Contains the client-side logic handling WebSocket connections, background message listening, and a non-blocking user input loop.
-- `[room_name].txt`: Auto-generated log files that store the message history for each respective room.
+4. Start services:
+
+```bash
+# Terminal 1
+cd backend && npm run dev
+
+# Terminal 2
+cd frontend && npm run dev
+```
+
+Frontend runs at `http://localhost:5173`, backend at `http://localhost:4000`.
+
+## API Highlights
+
+- `POST /api/auth/register` / `POST /api/auth/login`
+- `GET /api/profile` and `PUT /api/profile/steam`
+- `POST /api/wishlist/sync` to fetch Steam wishlist and CheapShark ATL data
+- `GET /api/games?sortBy=atl|discount|price|name&order=asc|desc`
+- Category endpoints: `GET/POST/PUT/DELETE /api/categories`, `POST /api/categories/reorder`
+
+## Verification Checklist
+
+- Register/login flow via curl or frontend Auth page
+- Link Steam profile + region and sync wishlist
+- Validate all-time low values from CheapShark API
+- Create categories and drag games into categories
+- Confirm reorder persistence by refreshing dashboard
+- Test WhatsApp alerts using `MOCK_WHATSAPP=true` or real client QR flow
+- Confirm cron jobs run hourly and daily for price checks
