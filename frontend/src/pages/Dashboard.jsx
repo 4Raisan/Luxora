@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import CategorySidebar from '../components/CategorySidebar';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+import { apiFetch, authHeaders } from '../utils/api';
 
 function Dashboard({ token, onLogout }) {
   const [profileForm, setProfileForm] = useState({
@@ -16,40 +15,33 @@ function Dashboard({ token, onLogout }) {
   const [sortOrder, setSortOrder] = useState('asc');
   const [status, setStatus] = useState('Ready');
 
-  const authHeaders = useMemo(() => {
-    return {
-      'Content-Type': 'application/json',
-      Authorization: 'Bearer ' + token
-    };
-  }, [token]);
+  const headers = useMemo(() => authHeaders(token), [token]);
 
   const loadProfile = useCallback(async () => {
-    const response = await fetch(`${API_URL}/api/profile`, { headers: authHeaders });
-    if (!response.ok) return;
-    const data = await response.json();
-    setProfileForm({
-      steamId: data.steamId || '',
-      region: data.region || 'USD',
-      whatsappNumber: data.whatsappNumber || '',
-      whatsappEnabled: Boolean(data.whatsappEnabled)
-    });
-  }, [authHeaders]);
+    try {
+      const data = await apiFetch('/api/profile', { headers });
+      setProfileForm({
+        steamId: data.steamId || '',
+        region: data.region || 'USD',
+        whatsappNumber: data.whatsappNumber || '',
+        whatsappEnabled: Boolean(data.whatsappEnabled)
+      });
+    } catch { /* auth failure handled elsewhere */ }
+  }, [headers]);
 
   const loadGames = useCallback(async () => {
-    const response = await fetch(`${API_URL}/api/games?sortBy=${sortBy}&order=${sortOrder}`, {
-      headers: authHeaders
-    });
-    if (!response.ok) return;
-    const data = await response.json();
-    setGames(data);
-  }, [authHeaders, sortBy, sortOrder]);
+    try {
+      const data = await apiFetch(`/api/games?sortBy=${sortBy}&order=${sortOrder}`, { headers });
+      setGames(data);
+    } catch { /* auth failure handled elsewhere */ }
+  }, [headers, sortBy, sortOrder]);
 
   const loadCategories = useCallback(async () => {
-    const response = await fetch(`${API_URL}/api/categories`, { headers: authHeaders });
-    if (!response.ok) return;
-    const data = await response.json();
-    setCategories(data);
-  }, [authHeaders]);
+    try {
+      const data = await apiFetch('/api/categories', { headers });
+      setCategories(data);
+    } catch { /* auth failure handled elsewhere */ }
+  }, [headers]);
 
   useEffect(() => {
     loadProfile();
@@ -59,64 +51,54 @@ function Dashboard({ token, onLogout }) {
 
   const syncWishlist = async () => {
     setStatus('Syncing wishlist...');
-    const response = await fetch(`${API_URL}/api/wishlist/sync`, {
-      method: 'POST',
-      headers: authHeaders
-    });
-
-    const payload = await response.json();
-    if (!response.ok) {
-      setStatus(payload.error || 'Failed to sync');
-      return;
+    try {
+      const payload = await apiFetch('/api/wishlist/sync', { method: 'POST', headers });
+      setStatus(`Synced ${payload.count} games`);
+      loadGames();
+    } catch (error) {
+      setStatus(error.message || 'Failed to sync');
     }
-
-    setStatus(`Synced ${payload.count} games`);
-    loadGames();
   };
 
   const saveProfile = async (event) => {
     event.preventDefault();
     setStatus('Saving profile...');
-    const response = await fetch(`${API_URL}/api/profile/steam`, {
-      method: 'PUT',
-      headers: authHeaders,
-      body: JSON.stringify(profileForm)
-    });
-
-    if (!response.ok) {
+    try {
+      await apiFetch('/api/profile/steam', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(profileForm)
+      });
+      setStatus('Profile updated');
+    } catch {
       setStatus('Profile update failed');
-      return;
     }
-
-    setStatus('Profile updated');
   };
 
   const addCategory = async () => {
     const name = window.prompt('Category name');
     if (!name) return;
 
-    const response = await fetch(`${API_URL}/api/categories`, {
-      method: 'POST',
-      headers: authHeaders,
-      body: JSON.stringify({ name })
-    });
-
-    if (response.ok) {
+    try {
+      await apiFetch('/api/categories', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name })
+      });
       loadCategories();
-    }
+    } catch { /* category creation failed silently */ }
   };
 
   const onDropGame = async (categoryId, steamAppId) => {
-    await fetch(`${API_URL}/api/categories/reorder`, {
-      method: 'POST',
-      headers: authHeaders,
-      body: JSON.stringify({
-        items: [{ categoryId, steamAppId, order: 0 }]
-      })
-    });
-
-    loadCategories();
-    setStatus('Category updated');
+    try {
+      await apiFetch('/api/categories/reorder', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ items: [{ categoryId, steamAppId, order: 0 }] })
+      });
+      loadCategories();
+      setStatus('Category updated');
+    } catch { /* reorder failed silently */ }
   };
 
   const stats = {

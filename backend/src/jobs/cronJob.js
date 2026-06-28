@@ -1,27 +1,13 @@
 const cron = require('node-cron');
-const steamService = require('../services/steamService');
+const { upsertWishlistGames } = require('../services/gameService');
 const { sendWhatsAppAlert } = require('../services/whatsappService');
+const steamService = require('../services/steamService');
 
-async function upsertWishlistGames(prisma, user) {
-  if (!user.steamId) return [];
-
-  const games = await steamService.fetchSteamWishlist(user.steamId, user.region);
+async function syncAndNotify(prisma, user) {
+  const games = await upsertWishlistGames(prisma, user);
 
   for (const game of games) {
     const allTimeLowPrice = await steamService.fetchAllTimeLow(game.steamAppId);
-
-    await prisma.game.upsert({
-      where: { steamAppId: game.steamAppId },
-      update: {
-        ...game,
-        allTimeLowPrice,
-        lastUpdated: new Date()
-      },
-      create: {
-        ...game,
-        allTimeLowPrice
-      }
-    });
 
     if (
       user.whatsappEnabled &&
@@ -33,10 +19,7 @@ async function upsertWishlistGames(prisma, user) {
       const message = `🎮 ${game.name} hit all-time low (${allTimeLowPrice}) in your Steam wishlist!`;
       await sendWhatsAppAlert(user.whatsappNumber, message);
       await prisma.notificationLog.create({
-        data: {
-          userId: user.id,
-          message
-        }
+        data: { userId: user.id, message }
       });
     }
   }
@@ -44,31 +27,23 @@ async function upsertWishlistGames(prisma, user) {
   return games;
 }
 
-function startPriceTrackingJobs(prisma) {
-  cron.schedule('0 * * * *', async () => {
-    const users = await prisma.user.findMany({ where: { steamId: { not: null } } });
-    for (const user of users) {
-      try {
-        await upsertWishlistGames(prisma, user);
-      } catch (error) {
-        console.error(`[Cron] Hourly update failed for user ${user.id}:`, error.message);
-      }
+async function runForAllUsers(prisma, label) {
+  const users = await prisma.user.findMany({ where: { steamId: { not: null } } });
+  for (const user of users) {
+    try {
+      await syncAndNotify(prisma, user);
+    } catch (error) {
+      console.error(`[Cron] ${label} failed for user ${user.id}:`, error.message);
     }
-  });
+  }
+}
 
-  cron.schedule('0 9 * * *', async () => {
-    const users = await prisma.user.findMany({ where: { steamId: { not: null } } });
-    for (const user of users) {
-      try {
-        await upsertWishlistGames(prisma, user);
-      } catch (error) {
-        console.error(`[Cron] Daily ATL check failed for user ${user.id}:`, error.message);
-      }
-    }
-  });
+function startPriceTrackingJobs(prisma) {
+  cron.schedule('0 * * * *', () => runForAllUsers(prisma, 'Hourly update'));
+  cron.schedule('0 9 * * *', () => runForAllUsers(prisma, 'Daily ATL check'));
 }
 
 module.exports = {
   startPriceTrackingJobs,
-  upsertWishlistGames
+  syncAndNotify
 };

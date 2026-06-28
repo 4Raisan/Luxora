@@ -1,6 +1,5 @@
 import { useState } from 'react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+import { apiFetch } from '../utils/api';
 
 function Auth({ onLogin }) {
   const [mode, setMode] = useState('login');
@@ -15,16 +14,11 @@ function Auth({ onLogin }) {
 
     try {
       const endpoint = mode === 'register' ? '/api/auth/register' : '/api/auth/login';
-      const response = await fetch(`${API_URL}${endpoint}`, {
+      const payload = await apiFetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
-
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload.error || 'Authentication failed');
-      }
 
       onLogin(payload.token);
     } catch (submitError) {

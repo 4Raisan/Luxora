@@ -5,7 +5,8 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
 const { PrismaClient } = require('@prisma/client');
-const steamService = require('./services/steamService');
+const { serializeUser, generateToken } = require('./utils/auth');
+const { upsertWishlistGames } = require('./services/gameService');
 const { initWhatsAppClient } = require('./services/whatsappService');
 const { startPriceTrackingJobs } = require('./jobs/cronJob');
 
@@ -76,19 +77,9 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
 
   const passwordHash = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({ data: { email, passwordHash } });
-  const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+  const token = generateToken(user, JWT_SECRET);
 
-  return res.status(201).json({
-    token,
-    user: {
-      id: user.id,
-      email: user.email,
-      steamId: user.steamId,
-      region: user.region,
-      whatsappNumber: user.whatsappNumber,
-      whatsappEnabled: user.whatsappEnabled
-    }
-  });
+  return res.status(201).json({ token, user: serializeUser(user) });
 });
 
 app.post('/api/auth/login', authLimiter, async (req, res) => {
@@ -107,18 +98,8 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
-  const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-  return res.json({
-    token,
-    user: {
-      id: user.id,
-      email: user.email,
-      steamId: user.steamId,
-      region: user.region,
-      whatsappNumber: user.whatsappNumber,
-      whatsappEnabled: user.whatsappEnabled
-    }
-  });
+  const token = generateToken(user, JWT_SECRET);
+  return res.json({ token, user: serializeUser(user) });
 });
 
 app.get('/api/profile', authMiddleware, async (req, res) => {
@@ -161,18 +142,7 @@ app.post('/api/wishlist/sync', authMiddleware, async (req, res) => {
     return res.status(400).json({ error: 'Link a Steam profile first' });
   }
 
-  const games = await steamService.fetchSteamWishlist(user.steamId, user.region);
-
-  for (const game of games) {
-    const allTimeLowPrice = await steamService.fetchAllTimeLow(game.steamAppId);
-
-    await prisma.game.upsert({
-      where: { steamAppId: game.steamAppId },
-      update: { ...game, allTimeLowPrice, lastUpdated: new Date() },
-      create: { ...game, allTimeLowPrice }
-    });
-  }
-
+  const games = await upsertWishlistGames(prisma, user);
   return res.json({ count: games.length, games });
 });
 
