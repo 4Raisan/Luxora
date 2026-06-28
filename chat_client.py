@@ -7,17 +7,21 @@ async def listen_for_messages(websocket):
     """Continuously listens for messages coming from the server."""
     try:
         async for message in websocket:
-            data = json.loads(message)
+            try:
+                data = json.loads(message)
+            except json.JSONDecodeError:
+                print("\n[!] Received invalid message from server")
+                continue
             msg_type = data.get("type")
 
-            if msg_type == "history":
+            if msg_type == "error":
+                print(f"\n[Server Error] {data.get('message', 'Unknown error')}")
+            elif msg_type == "history":
                 print("\n--- Last 5 Messages ---")
                 for msg in data.get("messages", []):
                     print(msg)
                 print("-----------------------\n")
-            
             elif msg_type == "broadcast":
-                # Print the broadcasted message over the input prompt smoothly
                 sys.stdout.write(f"\r{data.get('message')}\n> ")
                 sys.stdout.flush()
                 
@@ -58,7 +62,11 @@ async def main():
                 await websocket.send(json.dumps({"type": "login", "username": username}))
                 
                 response = await websocket.recv()
-                response_data = json.loads(response)
+                try:
+                    response_data = json.loads(response)
+                except json.JSONDecodeError:
+                    print("[!] Received invalid response from server. Try again.")
+                    continue
                 
                 if response_data.get("status") == "accepted":
                     print(f"Login successful. Welcome, {username}!")
@@ -82,6 +90,10 @@ async def main():
             
     except ConnectionRefusedError:
         print("[!] Could not connect to the server. Make sure server.py is running on port 2024.")
+    except websockets.exceptions.ConnectionClosed:
+        print("[!] Lost connection to the server.")
+    except Exception as e:
+        print(f"[!] Unexpected error: {e}")
 
 if __name__ == "__main__":
     # Windows specific fix for asyncio

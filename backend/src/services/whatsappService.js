@@ -34,8 +34,14 @@ function initWhatsAppClient() {
     console.log('[WhatsApp] Client disconnected.');
   });
 
+  client.on('auth_failure', (message) => {
+    console.error('[WhatsApp] Authentication failure:', message);
+  });
+
   client.initialize().catch((error) => {
     console.error('[WhatsApp] Initialization failed:', error.message);
+    client = null;
+    isReady = false;
   });
 }
 

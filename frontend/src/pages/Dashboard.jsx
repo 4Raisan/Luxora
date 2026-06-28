@@ -24,31 +24,55 @@ function Dashboard({ token, onLogout }) {
   }, [token]);
 
   const loadProfile = useCallback(async () => {
-    const response = await fetch(`${API_URL}/api/profile`, { headers: authHeaders });
-    if (!response.ok) return;
-    const data = await response.json();
-    setProfileForm({
-      steamId: data.steamId || '',
-      region: data.region || 'USD',
-      whatsappNumber: data.whatsappNumber || '',
-      whatsappEnabled: Boolean(data.whatsappEnabled)
-    });
+    try {
+      const response = await fetch(`${API_URL}/api/profile`, { headers: authHeaders });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        setStatus(errorData.error || 'Failed to load profile');
+        return;
+      }
+      const data = await response.json();
+      setProfileForm({
+        steamId: data.steamId || '',
+        region: data.region || 'USD',
+        whatsappNumber: data.whatsappNumber || '',
+        whatsappEnabled: Boolean(data.whatsappEnabled)
+      });
+    } catch (error) {
+      setStatus('Network error loading profile');
+    }
   }, [authHeaders]);
 
   const loadGames = useCallback(async () => {
-    const response = await fetch(`${API_URL}/api/games?sortBy=${sortBy}&order=${sortOrder}`, {
-      headers: authHeaders
-    });
-    if (!response.ok) return;
-    const data = await response.json();
-    setGames(data);
+    try {
+      const response = await fetch(`${API_URL}/api/games?sortBy=${sortBy}&order=${sortOrder}`, {
+        headers: authHeaders
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        setStatus(errorData.error || 'Failed to load games');
+        return;
+      }
+      const data = await response.json();
+      setGames(data);
+    } catch (error) {
+      setStatus('Network error loading games');
+    }
   }, [authHeaders, sortBy, sortOrder]);
 
   const loadCategories = useCallback(async () => {
-    const response = await fetch(`${API_URL}/api/categories`, { headers: authHeaders });
-    if (!response.ok) return;
-    const data = await response.json();
-    setCategories(data);
+    try {
+      const response = await fetch(`${API_URL}/api/categories`, { headers: authHeaders });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        setStatus(errorData.error || 'Failed to load categories');
+        return;
+      }
+      const data = await response.json();
+      setCategories(data);
+    } catch (error) {
+      setStatus('Network error loading categories');
+    }
   }, [authHeaders]);
 
   useEffect(() => {
@@ -59,64 +83,91 @@ function Dashboard({ token, onLogout }) {
 
   const syncWishlist = async () => {
     setStatus('Syncing wishlist...');
-    const response = await fetch(`${API_URL}/api/wishlist/sync`, {
-      method: 'POST',
-      headers: authHeaders
-    });
+    try {
+      const response = await fetch(`${API_URL}/api/wishlist/sync`, {
+        method: 'POST',
+        headers: authHeaders
+      });
 
-    const payload = await response.json();
-    if (!response.ok) {
-      setStatus(payload.error || 'Failed to sync');
-      return;
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setStatus(payload.error || 'Failed to sync');
+        return;
+      }
+
+      setStatus(`Synced ${payload.count} games`);
+      loadGames();
+    } catch (error) {
+      setStatus('Network error syncing wishlist');
     }
-
-    setStatus(`Synced ${payload.count} games`);
-    loadGames();
   };
 
   const saveProfile = async (event) => {
     event.preventDefault();
     setStatus('Saving profile...');
-    const response = await fetch(`${API_URL}/api/profile/steam`, {
-      method: 'PUT',
-      headers: authHeaders,
-      body: JSON.stringify(profileForm)
-    });
+    try {
+      const response = await fetch(`${API_URL}/api/profile/steam`, {
+        method: 'PUT',
+        headers: authHeaders,
+        body: JSON.stringify(profileForm)
+      });
 
-    if (!response.ok) {
-      setStatus('Profile update failed');
-      return;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        setStatus(errorData.error || 'Profile update failed');
+        return;
+      }
+
+      setStatus('Profile updated');
+    } catch (error) {
+      setStatus('Network error saving profile');
     }
-
-    setStatus('Profile updated');
   };
 
   const addCategory = async () => {
     const name = window.prompt('Category name');
     if (!name) return;
 
-    const response = await fetch(`${API_URL}/api/categories`, {
-      method: 'POST',
-      headers: authHeaders,
-      body: JSON.stringify({ name })
-    });
+    try {
+      const response = await fetch(`${API_URL}/api/categories`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ name })
+      });
 
-    if (response.ok) {
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        setStatus(errorData.error || 'Failed to create category');
+        return;
+      }
+
       loadCategories();
+    } catch (error) {
+      setStatus('Network error creating category');
     }
   };
 
   const onDropGame = async (categoryId, steamAppId) => {
-    await fetch(`${API_URL}/api/categories/reorder`, {
-      method: 'POST',
-      headers: authHeaders,
-      body: JSON.stringify({
-        items: [{ categoryId, steamAppId, order: 0 }]
-      })
-    });
+    try {
+      const response = await fetch(`${API_URL}/api/categories/reorder`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          items: [{ categoryId, steamAppId, order: 0 }]
+        })
+      });
 
-    loadCategories();
-    setStatus('Category updated');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        setStatus(errorData.error || 'Failed to update category');
+        return;
+      }
+
+      loadCategories();
+      setStatus('Category updated');
+    } catch (error) {
+      setStatus('Network error updating category');
+    }
   };
 
   const stats = {

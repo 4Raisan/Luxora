@@ -15,8 +15,11 @@ rooms = {}
 def save_message_to_log(room_name, message):
     """Appends a message to the room's log file."""
     filename = f"{room_name}.txt"
-    with open(filename, "a", encoding="utf-8") as file:
-        file.write(message + "\n")
+    try:
+        with open(filename, "a", encoding="utf-8") as file:
+            file.write(message + "\n")
+    except OSError as e:
+        print(f"[SERVER] Failed to write to log file '{filename}': {e}")
 
 # Step 5: Late Joiner Message History
 def get_message_history(room_name, count=5):
@@ -25,10 +28,13 @@ def get_message_history(room_name, count=5):
     if not os.path.exists(filename):
         return []
     
-    with open(filename, "r", encoding="utf-8") as file:
-        lines = file.readlines()
-        # Return the last 5 messages, stripped of newline characters
-        return [line.strip() for line in lines[-count:]]
+    try:
+        with open(filename, "r", encoding="utf-8") as file:
+            lines = file.readlines()
+            return [line.strip() for line in lines[-count:]]
+    except OSError as e:
+        print(f"[SERVER] Failed to read log file '{filename}': {e}")
+        return []
 
 # Step 1: Server Setup
 async def handle_client(websocket):
@@ -39,7 +45,11 @@ async def handle_client(websocket):
     try:
         # Step 2: User Login System
         async for message in websocket:
-            data = json.loads(message)
+            try:
+                data = json.loads(message)
+            except json.JSONDecodeError:
+                await websocket.send(json.dumps({"type": "error", "message": "Invalid JSON message"}))
+                continue
             action = data.get("type")
 
             if action == "login":
@@ -99,17 +109,27 @@ async def handle_client(websocket):
                 if websocket in subscribers:
                     subscribers.remove(websocket)
                     leave_msg = f"[SERVER] {username} has left the room."
-                    # Fire and forget broadcast so we don't block cleanup
-                    asyncio.create_task(broadcast_to_room(room_name, leave_msg))
+                    async def _safe_broadcast(rn, msg):
+                        try:
+                            await broadcast_to_room(rn, msg)
+                        except Exception as e:
+                            print(f"[SERVER] Failed to broadcast leave message in '{rn}': {e}")
+                    asyncio.create_task(_safe_broadcast(room_name, leave_msg))
 
 async def broadcast_to_room(room_name, message):
     """Sends a message to all connected clients (subscribers) in a specific room."""
     if room_name in rooms:
-        subscribers = rooms[room_name]
+        subscribers = list(rooms[room_name])
         if subscribers:
             payload = json.dumps({"type": "broadcast", "message": message})
-            # Send to all subscribers concurrently
-            await asyncio.gather(*[client.send(payload) for client in subscribers])
+            results = await asyncio.gather(
+                *[client.send(payload) for client in subscribers],
+                return_exceptions=True
+            )
+            for client, result in zip(subscribers, results):
+                if isinstance(result, Exception):
+                    rooms[room_name].discard(client)
+                    print(f"[SERVER] Removed disconnected client from '{room_name}'")
 
 async def main():
     # Start the server on port 2024

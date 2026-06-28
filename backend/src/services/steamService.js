@@ -41,21 +41,28 @@ async function fetchSteamWishlist(steamId, region = 'USD') {
 
   const apiUrl = `https://api.steampowered.com/IWishlistService/GetWishlist/v1/?steamid=${steamId}`;
   const fallbackUrl = `https://store.steampowered.com/wishlist/profiles/${steamId}/wishlistdata/?l=english&cc=${country}`;
-  const response = await fetch(apiUrl);
 
-  if (response.ok) {
-    const data = await response.json();
-    const items = data?.response?.items || [];
-    if (Array.isArray(items) && items.length) {
-      return items.map((item) => ({
-        steamAppId: item.appid,
-        name: item.name || `App ${item.appid}`,
-        imageUrl: item.capsule || null,
-        currentPrice: normalizePrice(item?.price?.final / 100),
-        originalPrice: normalizePrice(item?.price?.original / 100),
-        discountPercent: item?.price?.discount_percent ?? 0
-      }));
+  try {
+    const response = await fetch(apiUrl);
+
+    if (response.ok) {
+      const data = await response.json();
+      const items = data?.response?.items || [];
+      if (Array.isArray(items) && items.length) {
+        return items.map((item) => ({
+          steamAppId: item.appid,
+          name: item.name || `App ${item.appid}`,
+          imageUrl: item.capsule || null,
+          currentPrice: normalizePrice(item?.price?.final / 100),
+          originalPrice: normalizePrice(item?.price?.original / 100),
+          discountPercent: item?.price?.discount_percent ?? 0
+        }));
+      }
+    } else {
+      console.warn(`[Steam] Primary API returned status ${response.status}, falling back`);
     }
+  } catch (primaryError) {
+    console.warn('[Steam] Primary API request failed, falling back:', primaryError.message);
   }
 
   const fallbackResponse = await fetch(fallbackUrl);
@@ -92,20 +99,26 @@ async function fetchGameDetails(appId) {
 }
 
 async function fetchAllTimeLow(steamAppId) {
-  const response = await fetch(`${CHEAPSHARK_BASE_URL}/games?steamAppID=${steamAppId}`);
+  try {
+    const response = await fetch(`${CHEAPSHARK_BASE_URL}/games?steamAppID=${steamAppId}`);
 
-  if (!response.ok) {
+    if (!response.ok) {
+      console.warn(`[CheapShark] Request failed with status ${response.status} for appId ${steamAppId}`);
+      return null;
+    }
+
+    const data = await response.json();
+    const firstResult = Array.isArray(data) ? data[0] : null;
+
+    if (!firstResult?.cheapest) {
+      return null;
+    }
+
+    return normalizePrice(firstResult.cheapest);
+  } catch (error) {
+    console.error(`[CheapShark] Failed to fetch ATL for appId ${steamAppId}:`, error.message);
     return null;
   }
-
-  const data = await response.json();
-  const firstResult = Array.isArray(data) ? data[0] : null;
-
-  if (!firstResult?.cheapest) {
-    return null;
-  }
-
-  return normalizePrice(firstResult.cheapest);
 }
 
 module.exports = {
