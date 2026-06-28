@@ -2,7 +2,11 @@ import asyncio
 import websockets
 import json
 import os
+import re
 from datetime import datetime
+
+LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "chat_logs")
+os.makedirs(LOG_DIR, exist_ok=True)
 
 # Data Structures (Part C3)
 # Dictionary to store active users: {websocket: "username"}
@@ -11,17 +15,24 @@ connected_users = {}
 # Dictionary of sets for Pub-Sub chat rooms: {"room_name": {websocket1, websocket2}}
 rooms = {}
 
+def sanitize_room_name(room_name):
+    """Sanitize room name to prevent path traversal."""
+    safe = re.sub(r'[^a-zA-Z0-9_\-]', '', room_name)
+    return safe[:64] if safe else 'default'
+
 # Step 4: Message Logging
 def save_message_to_log(room_name, message):
     """Appends a message to the room's log file."""
-    filename = f"{room_name}.txt"
+    safe_name = sanitize_room_name(room_name)
+    filename = os.path.join(LOG_DIR, f"{safe_name}.txt")
     with open(filename, "a", encoding="utf-8") as file:
         file.write(message + "\n")
 
 # Step 5: Late Joiner Message History
 def get_message_history(room_name, count=5):
     """Retrieves the last 'count' messages from the room's log file."""
-    filename = f"{room_name}.txt"
+    safe_name = sanitize_room_name(room_name)
+    filename = os.path.join(LOG_DIR, f"{safe_name}.txt")
     if not os.path.exists(filename):
         return []
     
@@ -55,7 +66,10 @@ async def handle_client(websocket):
 
             elif action == "join":
                 # Step 3: Chat Room System (Pub-Sub Broker logic)
-                room_name = data.get("room")
+                room_name = sanitize_room_name(data.get("room", ""))
+                if not room_name:
+                    await websocket.send(json.dumps({"type": "error", "message": "Invalid room name."}))
+                    continue
                 current_room = room_name
                 
                 # Create room if it doesn't exist
@@ -75,8 +89,8 @@ async def handle_client(websocket):
                 await broadcast_to_room(room_name, join_msg)
 
             elif action == "message":
-                room_name = data.get("room")
-                content = data.get("content")
+                room_name = sanitize_room_name(data.get("room", ""))
+                content = data.get("content", "")[:2000]  # Limit message length
                 
                 # Format message with timestamp
                 timestamp = datetime.now().strftime("%H:%M")

@@ -14,9 +14,22 @@ dotenv.config();
 const prisma = new PrismaClient();
 const app = express();
 const PORT = process.env.PORT || 4000;
-const JWT_SECRET = process.env.JWT_SECRET || 'change-me';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET === 'change-me') {
+  console.error('[FATAL] JWT_SECRET is not set or is using the insecure default. Set a strong secret in .env');
+  process.exit(1);
+}
 
-app.use(cors());
+const ALLOWED_ORIGINS = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',')
+  : ['http://localhost:5173'];
+
+app.use(
+  cors({
+    origin: ALLOWED_ORIGINS,
+    credentials: true
+  })
+);
 app.use(express.json());
 
 const apiLimiter = rateLimit({
@@ -67,6 +80,10 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  if (typeof password !== 'string' || password.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -141,13 +158,32 @@ app.get('/api/profile', authMiddleware, async (req, res) => {
 app.put('/api/profile/steam', authMiddleware, async (req, res) => {
   const { steamId, region, whatsappNumber, whatsappEnabled } = req.body;
 
+  const VALID_REGIONS = ['USD', 'EUR', 'GBP', 'INR', 'BRL'];
+  const sanitizedRegion = VALID_REGIONS.includes(region) ? region : 'USD';
+
+  if (steamId && !/^\d{17}$/.test(steamId)) {
+    return res.status(400).json({ error: 'Invalid Steam ID format' });
+  }
+
+  if (whatsappNumber && !/^\+?\d{7,15}$/.test(whatsappNumber)) {
+    return res.status(400).json({ error: 'Invalid WhatsApp number format' });
+  }
+
   const user = await prisma.user.update({
     where: { id: req.user.id },
     data: {
       steamId: steamId || null,
-      region: region || 'USD',
+      region: sanitizedRegion,
       whatsappNumber: whatsappNumber || null,
       whatsappEnabled: Boolean(whatsappEnabled)
+    },
+    select: {
+      id: true,
+      email: true,
+      steamId: true,
+      region: true,
+      whatsappNumber: true,
+      whatsappEnabled: true
     }
   });
 
@@ -310,7 +346,10 @@ app.post('/api/categories/reorder', authMiddleware, async (req, res) => {
 app.use((error, req, res, _next) => {
   console.error('[Server Error]', error);
   const statusCode = error.statusCode || 500;
-  res.status(statusCode).json({ error: error.message || 'Internal Server Error' });
+  const message = process.env.NODE_ENV === 'production'
+    ? 'Internal Server Error'
+    : error.message || 'Internal Server Error';
+  res.status(statusCode).json({ error: message });
 });
 
 initWhatsAppClient();
