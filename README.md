@@ -4,3 +4,5 @@
 
 > Mini Project — CCS2313 Project Management
 > Faculty of IT & Computing, Sri Lanka Technological Campus (SLTC), Padukka
+
+Luxora is a centralized, subscription-based platform that brings premium
