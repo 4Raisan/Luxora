@@ -8,3 +8,5 @@
 Luxora is a centralized, subscription-based platform that brings premium
 home services — **Auto Care**, **Garden Care**, and **Pet Care** — under one
 roof for the Sri Lankan market. Instead of juggling separate providers,
+customers subscribe, book, and manage everything from a single place, with
+KYC-verified providers and end-to-end service tracking.
