@@ -12,3 +12,5 @@ customers subscribe, book, and manage everything from a single place, with
 KYC-verified providers and end-to-end service tracking.
 
 ---
+
+## Table of Contents
