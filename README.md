@@ -18,3 +18,5 @@ KYC-verified providers and end-to-end service tracking.
 - [Problem & Background](#problem--background)
 - [How It Works](#how-it-works)
 - [Core Features](#core-features)
+- [Service Categories](#service-categories)
+- [Team](#team)
