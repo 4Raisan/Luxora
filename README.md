@@ -14,3 +14,5 @@ KYC-verified providers and end-to-end service tracking.
 ---
 
 ## Table of Contents
+
+- [Problem & Background](#problem--background)
