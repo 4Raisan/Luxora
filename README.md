@@ -26,3 +26,5 @@ KYC-verified providers and end-to-end service tracking.
 ---
 
 ## Problem & Background
+
+Busy homeowners and professionals struggle to coordinate auto care, garden
