@@ -24,3 +24,5 @@ KYC-verified providers and end-to-end service tracking.
 - [Scope](#scope)
 
 ---
+
+## Problem & Background
