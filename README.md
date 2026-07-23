@@ -20,3 +20,5 @@ KYC-verified providers and end-to-end service tracking.
 - [Core Features](#core-features)
 - [Service Categories](#service-categories)
 - [Team](#team)
+- [Timeline](#timeline)
+- [Scope](#scope)
