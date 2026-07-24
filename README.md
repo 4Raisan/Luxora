@@ -30,3 +30,5 @@ KYC-verified providers and end-to-end service tracking.
 Busy homeowners and professionals struggle to coordinate auto care, garden
 maintenance, and pet care across multiple independent providers. Traditional
 booking is time-consuming, and most existing platforms are only marketplaces —
+leaving customers to search, compare, and pick providers themselves with no
+ongoing management.
