@@ -36,3 +36,5 @@ ongoing management.
 Luxora solves this by offering a **managed, premium experience**: one platform
 to subscribe, book, and track all three service categories, with Luxora handling
 provider matching, scheduling, and verification.
+
+**Expected impact**
