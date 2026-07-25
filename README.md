@@ -40,3 +40,5 @@ provider matching, scheduling, and verification.
 **Expected impact**
 - *Customers* — simpler booking, flexible plans, trusted providers, better time management.
 - *Providers* — more jobs, easier management, wider reach.
+- *Operators* — centralized control over users, providers, bookings, and reports.
+
