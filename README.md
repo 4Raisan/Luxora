@@ -44,3 +44,5 @@ provider matching, scheduling, and verification.
 
 ---
 
+## How It Works
+
