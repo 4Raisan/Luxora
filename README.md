@@ -46,3 +46,5 @@ provider matching, scheduling, and verification.
 
 ## How It Works
 
+1. Customer registers, logs in, and picks a **subscription**, **combo**, or **individual** booking.
+2. Luxora assigns a suitable **KYC-verified provider** by category, location, date, and availability.
