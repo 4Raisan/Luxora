@@ -50,3 +50,5 @@ provider matching, scheduling, and verification.
 2. Luxora assigns a suitable **KYC-verified provider** by category, location, date, and availability.
 3. Provider receives the request, confirms the job, and starts/completes it using **secure PIN verification** plus **before & after photos**.
 4. Customer confirms completion, leaves a **rating & review**, and views full **service history**.
+5. Admin oversees everything from a central dashboard — customers, providers, bookings, subscriptions, complaints, promotions.
+
