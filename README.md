@@ -52,3 +52,5 @@ provider matching, scheduling, and verification.
 4. Customer confirms completion, leaves a **rating & review**, and views full **service history**.
 5. Admin oversees everything from a central dashboard — customers, providers, bookings, subscriptions, complaints, promotions.
 
+---
+
