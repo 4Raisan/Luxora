@@ -60,3 +60,5 @@ provider matching, scheduling, and verification.
 - Registration & login, profile & membership management
 - Service booking & scheduling
 - Secure PIN verification
+- Booking status & history, assigned-provider details
+- Payment gateway & notifications
