@@ -56,3 +56,5 @@ provider matching, scheduling, and verification.
 
 ## Core Features
 
+**Customer Module**
+- Registration & login, profile & membership management
