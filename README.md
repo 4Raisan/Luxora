@@ -64,3 +64,5 @@ provider matching, scheduling, and verification.
 - Payment gateway & notifications
 - Ratings & reviews
 
+**Provider Module**
+- Registration & KYC verification, admin approval
