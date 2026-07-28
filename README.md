@@ -58,3 +58,5 @@ provider matching, scheduling, and verification.
 
 **Customer Module**
 - Registration & login, profile & membership management
+- Service booking & scheduling
+- Secure PIN verification
