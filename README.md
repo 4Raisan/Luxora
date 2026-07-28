@@ -62,3 +62,5 @@ provider matching, scheduling, and verification.
 - Secure PIN verification
 - Booking status & history, assigned-provider details
 - Payment gateway & notifications
+- Ratings & reviews
+
