@@ -68,3 +68,5 @@ provider matching, scheduling, and verification.
 - Registration & KYC verification, admin approval
 - Availability management, accept assigned bookings
 - Update status, PIN-verified start/complete
+- Upload before/after photos, earnings & history
+
