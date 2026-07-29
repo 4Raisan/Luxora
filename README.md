@@ -66,3 +66,5 @@ provider matching, scheduling, and verification.
 
 **Provider Module**
 - Registration & KYC verification, admin approval
+- Availability management, accept assigned bookings
+- Update status, PIN-verified start/complete
