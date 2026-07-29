@@ -70,3 +70,5 @@ provider matching, scheduling, and verification.
 - Update status, PIN-verified start/complete
 - Upload before/after photos, earnings & history
 
+**Admin Module**
+- Central dashboard, user & provider management
