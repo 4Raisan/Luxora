@@ -76,3 +76,5 @@ provider matching, scheduling, and verification.
 - Complaint & promotion handling, customer support, reports & analytics
 
 ---
+
+## Service Categories
