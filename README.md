@@ -72,3 +72,5 @@ provider matching, scheduling, and verification.
 
 **Admin Module**
 - Central dashboard, user & provider management
+- Provider approval/verification, subscription & booking management
+- Complaint & promotion handling, customer support, reports & analytics
