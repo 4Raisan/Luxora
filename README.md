@@ -80,3 +80,5 @@ provider matching, scheduling, and verification.
 ## Service Categories
 
 | Category | Services |
+| :--- | :--- |
+| **Auto Care** | Wash + Vacuum |
