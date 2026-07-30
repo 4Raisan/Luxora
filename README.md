@@ -78,3 +78,5 @@ provider matching, scheduling, and verification.
 ---
 
 ## Service Categories
+
+| Category | Services |
