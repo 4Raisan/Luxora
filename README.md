@@ -82,3 +82,5 @@ provider matching, scheduling, and verification.
 | Category | Services |
 | :--- | :--- |
 | **Auto Care** | Wash + Vacuum |
+| **Garden Care** | Lawn Mowing · Plant Watering · Fertilizer Application · Plant Health Care · Landscape Maintenance |
+| **Pet Care** | Pet Bathing · Pet Walking · Pet Grooming · Fish Tank Cleaning · Water Quality Testing |
