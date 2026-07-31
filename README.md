@@ -86,3 +86,5 @@ provider matching, scheduling, and verification.
 | **Pet Care** | Pet Bathing · Pet Walking · Pet Grooming · Fish Tank Cleaning · Water Quality Testing |
 
 ---
+
+## Team
