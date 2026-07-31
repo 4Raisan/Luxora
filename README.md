@@ -90,3 +90,5 @@ provider matching, scheduling, and verification.
 ## Team
 
 | Member | ID | Role |
+| :--- | :--- | :--- |
+| Deshan Ganganath | CIT-24-02-0043 | Project Manager |
