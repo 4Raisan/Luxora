@@ -92,3 +92,5 @@ provider matching, scheduling, and verification.
 | Member | ID | Role |
 | :--- | :--- | :--- |
 | Deshan Ganganath | CIT-24-02-0043 | Project Manager |
+| Imesh Kaushalya | CIT-24-02-0052 | Business Analyst |
+| **Rashen Anupama** | CIT-24-02-0051 | Backend Developer |
