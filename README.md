@@ -94,3 +94,5 @@ provider matching, scheduling, and verification.
 | Deshan Ganganath | CIT-24-02-0043 | Project Manager |
 | Imesh Kaushalya | CIT-24-02-0052 | Business Analyst |
 | **Rashen Anupama** | CIT-24-02-0051 | Backend Developer |
+| Hasitha Bolukandura | CIT-24-02-0233 | Frontend Developer |
+| Dulsath Withanage | CIT-24-02-0040 | UI/UX & QA |
