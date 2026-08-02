@@ -102,3 +102,5 @@ provider matching, scheduling, and verification.
 ---
 
 ## Timeline
+
+| Phase | Start | End | Duration |
