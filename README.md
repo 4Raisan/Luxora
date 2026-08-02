@@ -104,3 +104,5 @@ provider matching, scheduling, and verification.
 ## Timeline
 
 | Phase | Start | End | Duration |
+| :--- | :--- | :--- | :--- |
+| Requirement Gathering | 1 Jul 2026 | 5 Jul 2026 | 5 days |
