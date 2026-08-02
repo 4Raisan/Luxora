@@ -106,3 +106,5 @@ provider matching, scheduling, and verification.
 | Phase | Start | End | Duration |
 | :--- | :--- | :--- | :--- |
 | Requirement Gathering | 1 Jul 2026 | 5 Jul 2026 | 5 days |
+| System Design | 6 Jul 2026 | 12 Jul 2026 | 7 days |
+| Development | 10 Jul 2026 | 24 Jul 2026 | 15 days |
