@@ -110,3 +110,5 @@ provider matching, scheduling, and verification.
 | Development | 10 Jul 2026 | 24 Jul 2026 | 15 days |
 | Testing | 25 Jul 2026 | 31 Jul 2026 | 7 days |
 | Documentation | 1 Jul 2026 | 7 Aug 2026 | 38 days |
+| Final Review & Presentation | 8 Aug 2026 | 21 Aug 2026 | 14 days |
+
