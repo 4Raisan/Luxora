@@ -116,3 +116,5 @@ provider matching, scheduling, and verification.
 
 ## Scope
 
+**Optional / Advanced (future):** mobile app · business accounts · loyalty & referrals ·
+more service categories · AI recommendations · real-time chat · automated email/SMS.
