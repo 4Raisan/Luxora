@@ -124,3 +124,5 @@ international ops · vehicle repairs · veterinary treatment · cash/crypto paym
 multi-language support.
 
 ---
+
+*Academic mini-project. Not intended for production deployment.*
