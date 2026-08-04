@@ -118,3 +118,5 @@ provider matching, scheduling, and verification.
 
 **Optional / Advanced (future):** mobile app · business accounts · loyalty & referrals ·
 more service categories · AI recommendations · real-time chat · automated email/SMS.
+
+**Out of scope:** emergency requests · customer-chosen providers (marketplace) ·
