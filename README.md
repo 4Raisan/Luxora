@@ -122,3 +122,5 @@ more service categories · AI recommendations · real-time chat · automated ema
 **Out of scope:** emergency requests · customer-chosen providers (marketplace) ·
 international ops · vehicle repairs · veterinary treatment · cash/crypto payments ·
 multi-language support.
+
+---
