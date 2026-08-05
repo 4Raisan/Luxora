@@ -5,6 +5,7 @@ const Hero = () => {
   const headingRef = useRef(null)
   const subtitleRef = useRef(null)
   const actionsRef = useRef(null)
+  const glowRef = useRef(null)
 
   useEffect(() => {
     const els = [headingRef.current, subtitleRef.current, actionsRef.current]
@@ -14,6 +15,16 @@ const Hero = () => {
         el.classList.add('animate-fade-up')
       }
     })
+
+    const onMove = (e) => {
+      if (!glowRef.current) return
+      const { innerWidth: w, innerHeight: h } = window
+      const x = (e.clientX / w) * 100
+      const y = (e.clientY / h) * 100
+      glowRef.current.style.background = `radial-gradient(600px 400px at ${x}% ${y}%, rgba(201,168,76,0.12), transparent 60%)`
+    }
+    window.addEventListener('mousemove', onMove)
+    return () => window.removeEventListener('mousemove', onMove)
   }, [])
 
   const scrollTo = (id) => {
@@ -26,6 +37,7 @@ const Hero = () => {
       {/* Background */}
       <div className="hero__bg">
         <div className="hero__overlay" />
+        <div className="hero__glow" ref={glowRef} />
       </div>
 
       {/* Content */}

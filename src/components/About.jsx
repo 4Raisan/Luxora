@@ -1,4 +1,5 @@
 import './About.css'
+import Reveal from './Reveal'
 
 const About = () => {
   const pillars = [
@@ -35,25 +36,29 @@ const About = () => {
         {/* Right Column */}
         <div className="about__right">
           <div className="about__pillars">
-            {pillars.map((p) => (
-              <div key={p.title} className="about__pillar">
-                <div className="about__pillar-icon">{p.icon}</div>
-                <div>
-                  <h4 className="about__pillar-title">{p.title}</h4>
-                  <p className="about__pillar-desc">{p.desc}</p>
+            {pillars.map((p, i) => (
+              <Reveal key={p.title} delay={i * 0.1}>
+                <div className="about__pillar">
+                  <div className="about__pillar-icon">{p.icon}</div>
+                  <div>
+                    <h4 className="about__pillar-title">{p.title}</h4>
+                    <p className="about__pillar-desc">{p.desc}</p>
+                  </div>
                 </div>
-              </div>
+              </Reveal>
             ))}
           </div>
 
           {/* Quote */}
-          <div className="about__quote">
+          <Reveal delay={0.1}>
+            <div className="about__quote">
             <div className="about__quote-mark">&ldquo;</div>
             <p>
               The finest luxury is not what you own, but the life you live within it.
             </p>
             <div className="about__quote-author">— Luxora Founding Charter</div>
           </div>
+          </Reveal>
         </div>
       </div>
     </section>

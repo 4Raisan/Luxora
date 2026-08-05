@@ -8,6 +8,47 @@ import { authenticateToken, requireRole, JWT_SECRET } from './auth.js';
 
 initDb();
 
+// Runtime tables (not in db.js seed) — created idempotently
+db.exec(`
+  CREATE TABLE IF NOT EXISTS promotions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    code TEXT,
+    discount_pct REAL DEFAULT 0,
+    active INTEGER DEFAULT 1
+  );
+`);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    message TEXT NOT NULL,
+    link TEXT,
+    read INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+`);
+// Seed a welcome promotion if none exist
+if (db.prepare('SELECT COUNT(*) as c FROM promotions').get().c === 0) {
+  db.prepare(`INSERT INTO promotions (title, description, code, discount_pct)
+    VALUES (?, ?, ?, ?)`).run(
+    'Welcome to Luxora',
+    '15% off your first subscription — a gift for joining the concierge network.',
+    'LUXORA15',
+    15
+  );
+}
+
+// Helper: push a notification
+function notify(userId, message, link = null) {
+  try {
+    db.prepare('INSERT INTO notifications (user_id, message, link) VALUES (?, ?, ?)')
+      .run(userId, message, link);
+  } catch (_) { /* non-fatal */ }
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -153,6 +194,11 @@ app.post('/api/bookings', authenticateToken, (req, res) => {
 
   const result = stmt.run(userId, provider_id, service_id, booking_date, booking_time, status, pin_code, service.price);
 
+  if (provider_id) {
+    const pUser = db.prepare('SELECT user_id FROM providers WHERE id = ?').get(provider_id);
+    if (pUser) notify(pUser.user_id, `New booking assigned: ${service.title} on ${booking_date} at ${booking_time}.`);
+  }
+
   res.status(201).json({
     booking_id: result.lastInsertRowid,
     pin_code,
@@ -227,6 +273,9 @@ app.put('/api/bookings/:id/status', authenticateToken, requireRole('provider'), 
     // Credit earnings to provider (85% payout)
     const payout = booking.total_price * 0.85;
     db.prepare('UPDATE providers SET earnings = earnings + ? WHERE id = ?').run(payout, provider.id);
+    notify(booking.user_id, `Your ${booking.service_id ? 'service' : 'booking'} #${id} has been completed. Leave a review!`, '/reviews');
+  } else if (status === 'in_progress') {
+    notify(booking.user_id, `Your provider has started service on booking #${id}.`);
   }
 
   res.json({ message: `Booking status updated to ${status}` });
@@ -285,6 +334,172 @@ app.get('/api/admin/stats', authenticateToken, requireRole('admin'), (req, res) 
   const totalRevenue = db.prepare('SELECT SUM(total_price) as sum FROM bookings WHERE status = "completed"').get().sum || 0;
 
   res.json({ totalUsers, totalProviders, totalBookings, totalRevenue });
+});
+
+// ----------------------------------------------------
+// 6. CUSTOMER DASHBOARD
+// ----------------------------------------------------
+
+app.get('/api/customer/dashboard', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const profile = db.prepare('SELECT id, name, email, phone, role, created_at FROM users WHERE id = ?').get(userId);
+
+  const activeSubs = db.prepare(`
+    SELECT us.*, sp.title, sp.type, sp.price_monthly, sp.description
+    FROM user_subscriptions us
+    JOIN subscription_plans sp ON us.plan_id = sp.id
+    WHERE us.user_id = ? AND us.status = 'active'
+    ORDER BY us.start_date DESC
+  `).all(userId).map(s => ({ ...s, features: [] }));
+
+  const bookings = db.prepare(`
+    SELECT b.*, s.title as service_title, s.description as service_desc, c.name as category_name,
+           u.name as provider_name, u.phone as provider_phone
+    FROM bookings b
+    JOIN services s ON b.service_id = s.id
+    JOIN categories c ON s.category_id = c.id
+    LEFT JOIN providers p ON b.provider_id = p.id
+    LEFT JOIN users u ON p.user_id = u.id
+    WHERE b.user_id = ?
+    ORDER BY b.booking_date ASC, b.booking_time ASC
+  `).all(userId);
+
+  const now = new Date();
+  const upcoming = bookings.filter(b => {
+    if (b.status === 'completed' || b.status === 'cancelled') return false;
+    const d = new Date(`${b.booking_date}T${b.booking_time || '00:00'}`);
+    return d >= now;
+  });
+  const past = bookings.filter(b => !upcoming.includes(b));
+
+  const reviews = db.prepare(`
+    SELECT r.*, s.title as service_title, u.name as provider_name
+    FROM reviews r
+    JOIN bookings b ON r.booking_id = b.id
+    JOIN services s ON b.service_id = s.id
+    LEFT JOIN providers p ON r.provider_id = p.id
+    LEFT JOIN users u ON p.user_id = u.id
+    WHERE r.user_id = ?
+    ORDER BY r.created_at DESC
+  `).all(userId);
+
+  res.json({ profile, activeSubscriptions: activeSubs, upcomingBookings: upcoming, pastBookings: past, reviews });
+});
+
+// Customer cancels own pending booking
+app.put('/api/bookings/:id/cancel', authenticateToken, (req, res) => {
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!booking) return res.status(404).json({ error: 'Booking not found' });
+  if (booking.status !== 'pending' && booking.status !== 'assigned') {
+    return res.status(400).json({ error: 'Only pending or assigned bookings can be cancelled' });
+  }
+  db.prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?").run(req.params.id);
+  res.json({ message: 'Booking cancelled' });
+});
+
+// ----------------------------------------------------
+// 7. PROVIDER ENHANCEMENTS
+// ----------------------------------------------------
+
+app.put('/api/provider/availability', authenticateToken, requireRole('provider'), (req, res) => {
+  const { availability_status } = req.body;
+  const allowed = ['available', 'busy', 'offline'];
+  if (!allowed.includes(availability_status)) return res.status(400).json({ error: 'Invalid availability status' });
+  const provider = db.prepare('SELECT id FROM providers WHERE user_id = ?').get(req.user.id);
+  if (!provider) return res.status(404).json({ error: 'Provider record not found' });
+  db.prepare('UPDATE providers SET availability_status = ? WHERE id = ?').run(availability_status, provider.id);
+  res.json({ message: `Availability set to ${availability_status}`, availability_status });
+});
+
+app.get('/api/provider/earnings', authenticateToken, requireRole('provider'), (req, res) => {
+  const provider = db.prepare('SELECT * FROM providers WHERE user_id = ?').get(req.user.id);
+  if (!provider) return res.status(404).json({ error: 'Provider record not found' });
+  const completedJobs = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE provider_id = ? AND status = 'completed'").get(provider.id).c;
+  const history = db.prepare(`
+    SELECT b.id, b.booking_date, b.booking_time, s.title as service_title, b.total_price, b.status
+    FROM bookings b JOIN services s ON b.service_id = s.id
+    WHERE b.provider_id = ? ORDER BY b.booking_date DESC LIMIT 50
+  `).all(provider.id);
+  res.json({ earnings: provider.earnings, completedJobs, history });
+});
+
+// ----------------------------------------------------
+// 8. PROMOTIONS
+// ----------------------------------------------------
+
+app.get('/api/promotions', (req, res) => {
+  const promos = db.prepare('SELECT * FROM promotions WHERE active = 1').all();
+  res.json(promos);
+});
+
+app.post('/api/admin/promotions', authenticateToken, requireRole('admin'), (req, res) => {
+  const { title, description, code, discount_pct } = req.body;
+  if (!title) return res.status(400).json({ error: 'Title required' });
+  const result = db.prepare('INSERT INTO promotions (title, description, code, discount_pct) VALUES (?, ?, ?, ?)')
+    .run(title, description || '', code || '', discount_pct || 0);
+  res.status(201).json({ id: result.lastInsertRowid, message: 'Promotion created' });
+});
+
+app.put('/api/admin/promotions/:id', authenticateToken, requireRole('admin'), (req, res) => {
+  const p = db.prepare('SELECT * FROM promotions WHERE id = ?').get(req.params.id);
+  if (!p) return res.status(404).json({ error: 'Promotion not found' });
+  db.prepare('UPDATE promotions SET active = ? WHERE id = ?').run(p.active ? 0 : 1, req.params.id);
+  res.json({ message: `Promotion ${p.active ? 'deactivated' : 'activated'}` });
+});
+
+// ----------------------------------------------------
+// 9. ADMIN BOOKINGS & COMPLAINTS
+// ----------------------------------------------------
+
+app.get('/api/admin/bookings', authenticateToken, requireRole('admin'), (req, res) => {
+  const bookings = db.prepare(`
+    SELECT b.*, s.title as service_title, c.name as category_name,
+           cu.name as customer_name, cu.email as customer_email,
+           pu.name as provider_name
+    FROM bookings b
+    JOIN services s ON b.service_id = s.id
+    JOIN categories c ON s.category_id = c.id
+    JOIN users cu ON b.user_id = cu.id
+    LEFT JOIN providers p ON b.provider_id = p.id
+    LEFT JOIN users pu ON p.user_id = pu.id
+    ORDER BY b.created_at DESC
+  `).all();
+  res.json(bookings);
+});
+
+app.get('/api/admin/complaints', authenticateToken, requireRole('admin'), (req, res) => {
+  const complaints = db.prepare(`
+    SELECT cm.*, u.name as customer_name, u.email as customer_email,
+           s.title as service_title
+    FROM complaints cm
+    JOIN users u ON cm.user_id = u.id
+    LEFT JOIN bookings b ON cm.booking_id = b.id
+    LEFT JOIN services s ON b.service_id = s.id
+    ORDER BY cm.created_at DESC
+  `).all();
+  res.json(complaints);
+});
+
+app.put('/api/admin/complaints/:id', authenticateToken, requireRole('admin'), (req, res) => {
+  const { status } = req.body;
+  const allowed = ['open', 'in_review', 'resolved'];
+  if (!allowed.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+  db.prepare('UPDATE complaints SET status = ? WHERE id = ?').run(status, req.params.id);
+  res.json({ message: `Complaint updated to ${status}` });
+});
+
+// ----------------------------------------------------
+// 10. NOTIFICATIONS
+// ----------------------------------------------------
+
+app.get('/api/notifications', authenticateToken, (req, res) => {
+  const notes = db.prepare('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50').all(req.user.id);
+  res.json(notes);
+});
+
+app.put('/api/notifications/:id/read', authenticateToken, (req, res) => {
+  db.prepare('UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
+  res.json({ message: 'Marked read' });
 });
 
 const PORT = process.env.PORT || 5000;

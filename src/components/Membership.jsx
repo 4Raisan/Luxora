@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import './Membership.css'
+import Reveal from './Reveal'
 
 const Membership = () => {
   const [form, setForm] = useState({
@@ -67,10 +68,12 @@ const Membership = () => {
 
           <div className="membership__steps">
             {['Submit Application', 'Curator Review', 'Private Consultation', 'Welcome to Luxora'].map((step, i) => (
-              <div key={step} className="membership__step">
-                <div className="membership__step-num">{i + 1}</div>
-                <span>{step}</span>
-              </div>
+              <Reveal key={step} delay={i * 0.1}>
+                <div className="membership__step">
+                  <div className="membership__step-num">{i + 1}</div>
+                  <span>{step}</span>
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>

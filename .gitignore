@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# runtime db
+luxora.db
+luxora.db-shm
+luxora.db-wal

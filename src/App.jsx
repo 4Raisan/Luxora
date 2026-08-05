@@ -10,6 +10,9 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import ProviderRegister from './pages/ProviderRegister'
 import ProviderDashboard from './pages/ProviderDashboard'
+import CustomerDashboard from './pages/CustomerDashboard'
+import BookService from './pages/BookService'
+import Reviews from './pages/Reviews'
 import './App.css'
 
 // Main landing page layout
@@ -37,6 +40,9 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/provider-register" element={<ProviderRegister />} />
           <Route path="/provider-dashboard" element={<ProviderDashboard />} />
+          <Route path="/customer-dashboard" element={<CustomerDashboard />} />
+          <Route path="/book" element={<BookService />} />
+          <Route path="/reviews" element={<Reviews />} />
         </Routes>
       </div>
     </BrowserRouter>
