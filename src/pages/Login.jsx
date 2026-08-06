@@ -26,7 +26,11 @@ const Login = () => {
     e.preventDefault()
     setError(''); setLoading(true)
     try {
-      const res = await apiRequest('/auth/login', 'POST', { email: form.email, password: form.password })
+      const res = await apiRequest('/auth/login', 'POST', { 
+        email: form.email, 
+        password: form.password,
+        role: tab
+      })
       localStorage.setItem('luxora_token', res.token)
       localStorage.setItem('luxora_role', res.user.role)
       const role = res.user.role
@@ -156,6 +160,36 @@ const Login = () => {
         {/* Divider */}
         <div className="auth-divider">
           <span />
+        </div>
+
+        {/* Universal Tester One-Click Shortcuts */}
+        <div style={{ margin: '1rem 0 0.5rem', textAlign: 'center' }}>
+          <p style={{ fontSize: '0.75rem', color: 'rgba(212, 175, 55, 0.8)', letterSpacing: '0.05em', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+            🔑 Universal Demo Login (tester@gmail.com / 12345678)
+          </p>
+          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+            <button
+              type="button"
+              style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', borderRadius: '4px', background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)', color: '#d4af37', cursor: 'pointer' }}
+              onClick={() => { setForm({ email: 'tester@gmail.com', password: '12345678' }); setTab('customer'); }}
+            >
+              As Customer
+            </button>
+            <button
+              type="button"
+              style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', borderRadius: '4px', background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)', color: '#d4af37', cursor: 'pointer' }}
+              onClick={() => { setForm({ email: 'tester@gmail.com', password: '12345678' }); setTab('provider'); }}
+            >
+              As Provider
+            </button>
+            <button
+              type="button"
+              style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', borderRadius: '4px', background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)', color: '#d4af37', cursor: 'pointer' }}
+              onClick={() => { setForm({ email: 'tester@gmail.com', password: '12345678' }); setTab('admin'); }}
+            >
+              As Admin
+            </button>
+          </div>
         </div>
 
         {/* Footer */}

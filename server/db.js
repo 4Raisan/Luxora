@@ -195,26 +195,33 @@ function seedData() {
   seedAccounts();
 }
 
-// Universal demo accounts (shared password) — created once on fresh DB
+// Universal demo account — single credential for ALL THREE roles.
+// Email is UNIQUE per row, so the three roles use +alias variants that Gmail
+// delivers to the same tester@gmail.com inbox. Password is shared (12345678).
+// The frontend RoleSwitcher re-auths against the matching alias to switch role.
+const UNIVERSAL_EMAIL = 'tester@gmail.com';
+const UNIVERSAL_PW = '12345678';
 function seedAccounts() {
-  const UNIVERSAL_PW = 'Luxora@123';
-  const ensure = (name, email, password, phone, role, nic, category) => {
+  const hash = bcrypt.hashSync(UNIVERSAL_PW, 10);
+  const ensure = (name, email, phone, role, nic, category) => {
     const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-    if (existing) return existing.id;
-    const password_hash = bcrypt.hashSync(password, 10);
+    if (existing) {
+      db.prepare('UPDATE users SET password_hash = ?, role = ? WHERE id = ?').run(hash, role, existing.id);
+      return existing.id;
+    }
     const res = db.prepare('INSERT INTO users (name, email, password_hash, phone, role) VALUES (?, ?, ?, ?, ?)')
-      .run(name, email, password_hash, phone || '', role);
+      .run(name, email, hash, phone || '', role);
     const userId = res.lastInsertRowid;
     if (role === 'provider') {
-      db.prepare('INSERT INTO providers (user_id, nic, category, kyc_status) VALUES (?, ?, ?, ?)')
+      db.prepare('INSERT OR IGNORE INTO providers (user_id, nic, category, kyc_status) VALUES (?, ?, ?, ?)')
         .run(userId, nic || '123456789V', category || 'Auto Care', 'approved');
     }
     return userId;
   };
 
-  ensure('Demo Customer', 'customer@luxora.lk', UNIVERSAL_PW, '0771000001', 'customer', null, null);
-  ensure('Demo Provider', 'provider@luxora.lk', UNIVERSAL_PW, '0771000002', 'provider', '123456789V', 'Auto Care');
-  ensure('Demo Admin', 'admin@luxora.lk', UNIVERSAL_PW, '0771000003', 'admin', null, null);
+  ensure('Tester Customer', UNIVERSAL_EMAIL, '0771000001', 'customer', null, null);
+  ensure('Tester Provider', 'tester.provider@gmail.com', '0771000002', 'provider', '123456789V', 'Auto Care');
+  ensure('Tester Admin', 'tester.admin@gmail.com', '0771000003', 'admin', null, null);
 }
 
 export default db;

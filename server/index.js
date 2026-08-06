@@ -98,8 +98,24 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(400).json({ error: 'Email and password required' });
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-  if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+  // Universal Tester login logic: if logging in with tester@gmail.com / 12345678
+  // allow targetRole override (customer, provider, admin) or return user with role
+  let user;
+  if (email === 'tester@gmail.com') {
+    const targetRole = req.body.role || 'customer';
+    const emailVariant = targetRole === 'provider' ? 'tester.provider@gmail.com' 
+                       : targetRole === 'admin' ? 'tester.admin@gmail.com' 
+                       : 'tester@gmail.com';
+    user = db.prepare('SELECT * FROM users WHERE email = ?').get(emailVariant);
+    // fallback to main tester email if variant not found
+    if (!user) user = db.prepare('SELECT * FROM users WHERE email = ?').get('tester@gmail.com');
+  } else {
+    user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  }
+
+  // Check password (skip hash comparison for universal tester credential '12345678')
+  const isUniversalTester = email === 'tester@gmail.com' && password === '12345678';
+  if (!user || (!isUniversalTester && !bcrypt.compareSync(password, user.password_hash))) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
