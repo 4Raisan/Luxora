@@ -328,10 +328,10 @@ app.put('/api/admin/providers/:id/kyc', authenticateToken, requireRole('admin'),
 });
 
 app.get('/api/admin/stats', authenticateToken, requireRole('admin'), (req, res) => {
-  const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users WHERE role = "customer"').get().count;
-  const totalProviders = db.prepare('SELECT COUNT(*) as count FROM providers WHERE kyc_status = "approved"').get().count;
+  const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users WHERE role = ?').get('customer').count;
+  const totalProviders = db.prepare('SELECT COUNT(*) as count FROM providers WHERE kyc_status = ?').get('approved').count;
   const totalBookings = db.prepare('SELECT COUNT(*) as count FROM bookings').get().count;
-  const totalRevenue = db.prepare('SELECT SUM(total_price) as sum FROM bookings WHERE status = "completed"').get().sum || 0;
+  const totalRevenue = db.prepare('SELECT SUM(total_price) as sum FROM bookings WHERE status = ?').get('completed').sum || 0;
 
   res.json({ totalUsers, totalProviders, totalBookings, totalRevenue });
 });

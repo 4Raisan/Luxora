@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { apiRequest } from '../services/api'
 import './Auth.css'
 
 const Signup = () => {
@@ -8,6 +9,7 @@ const Signup = () => {
   const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [agreed, setAgreed] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -20,14 +22,27 @@ const Signup = () => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (form.password !== form.confirm) return alert('Passwords do not match.')
-    setLoading(true)
-    setTimeout(() => {
+    if (form.password !== form.confirm) return setError('Passwords do not match.')
+    if (!agreed) return setError('Please accept the Terms of Service.')
+    setError(''); setLoading(true)
+    try {
+      const res = await apiRequest('/auth/register', 'POST', {
+        name: form.fullName,
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+        role: 'customer',
+      })
+      localStorage.setItem('luxora_token', res.token)
+      localStorage.setItem('luxora_role', res.user.role)
+      navigate('/customer-dashboard')
+    } catch (err) {
+      setError(err.message)
+    } finally {
       setLoading(false)
-      navigate('/login')
-    }, 1800)
+    }
   }
 
   return (
@@ -49,6 +64,7 @@ const Signup = () => {
 
         {/* Form */}
         <form className="auth-form" onSubmit={handleSubmit} id="signup-form">
+          {error && <div className="auth-error">{error}</div>}
           {/* Row: Name + Phone */}
           <div className="auth-form-row">
             <div className="auth-field">

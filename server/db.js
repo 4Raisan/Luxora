@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
+import bcrypt from 'bcryptjs';
 
 const dbPath = path.resolve(process.cwd(), 'luxora.db');
 const db = new Database(dbPath);
@@ -191,6 +192,29 @@ function seedData() {
       ])
     );
   }
+  seedAccounts();
+}
+
+// Universal demo accounts (shared password) — created once on fresh DB
+function seedAccounts() {
+  const UNIVERSAL_PW = 'Luxora@123';
+  const ensure = (name, email, password, phone, role, nic, category) => {
+    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    if (existing) return existing.id;
+    const password_hash = bcrypt.hashSync(password, 10);
+    const res = db.prepare('INSERT INTO users (name, email, password_hash, phone, role) VALUES (?, ?, ?, ?, ?)')
+      .run(name, email, password_hash, phone || '', role);
+    const userId = res.lastInsertRowid;
+    if (role === 'provider') {
+      db.prepare('INSERT INTO providers (user_id, nic, category, kyc_status) VALUES (?, ?, ?, ?)')
+        .run(userId, nic || '123456789V', category || 'Auto Care', 'approved');
+    }
+    return userId;
+  };
+
+  ensure('Demo Customer', 'customer@luxora.lk', UNIVERSAL_PW, '0771000001', 'customer', null, null);
+  ensure('Demo Provider', 'provider@luxora.lk', UNIVERSAL_PW, '0771000002', 'provider', '123456789V', 'Auto Care');
+  ensure('Demo Admin', 'admin@luxora.lk', UNIVERSAL_PW, '0771000003', 'admin', null, null);
 }
 
 export default db;

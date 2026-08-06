@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { apiRequest } from '../services/api'
 import './Auth.css'
 
 const Login = () => {
@@ -8,6 +9,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [keepSigned, setKeepSigned] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({ email: '', password: '' })
 
   const tabs = [
@@ -20,17 +22,22 @@ const Login = () => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setLoading(true)
-    setTimeout(() => {
+    setError(''); setLoading(true)
+    try {
+      const res = await apiRequest('/auth/login', 'POST', { email: form.email, password: form.password })
+      localStorage.setItem('luxora_token', res.token)
+      localStorage.setItem('luxora_role', res.user.role)
+      const role = res.user.role
+      if (role === 'provider') navigate('/provider-dashboard')
+      else if (role === 'admin') navigate('/admin-dashboard')
+      else navigate('/customer-dashboard')
+    } catch (err) {
+      setError(err.message)
+    } finally {
       setLoading(false)
-      if (tab === 'provider') {
-        navigate('/provider-dashboard')
-      } else {
-        navigate('/')
-      }
-    }, 1800)
+    }
   }
 
   return (
@@ -67,6 +74,7 @@ const Login = () => {
 
         {/* Form */}
         <form className="auth-form" onSubmit={handleSubmit} id="login-form">
+          {error && <div className="auth-error">{error}</div>}
           <div className="auth-field">
             <input
               id="login-email"

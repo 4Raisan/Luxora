@@ -13,6 +13,7 @@ import ProviderDashboard from './pages/ProviderDashboard'
 import CustomerDashboard from './pages/CustomerDashboard'
 import BookService from './pages/BookService'
 import Reviews from './pages/Reviews'
+import AdminDashboard from './pages/AdminDashboard'
 import './App.css'
 
 // Main landing page layout
@@ -43,6 +44,7 @@ function App() {
           <Route path="/customer-dashboard" element={<CustomerDashboard />} />
           <Route path="/book" element={<BookService />} />
           <Route path="/reviews" element={<Reviews />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
         </Routes>
       </div>
     </BrowserRouter>
