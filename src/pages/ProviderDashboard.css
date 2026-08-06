@@ -798,3 +798,36 @@
   .pd-stats { grid-template-columns: 1fr 1fr; }
   .pd-services-grid { grid-template-columns: 1fr; }
 }
+
+/* ─── New: toast, eyebrow, job rows, photos, call ── */
+.pd-eyebrow { font-size: 0.7rem; letter-spacing: 0.25em; color: #c9a84c; margin-bottom: 0.35rem; }
+.pd-toast {
+  position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%);
+  background: #059669; color: #fff; padding: 0.7rem 1.4rem; border-radius: 999px;
+  font-size: 0.85rem; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.pd-nav__dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #c9a84c; margin-right: 0.5rem; opacity: 0; transition: opacity 0.2s; }
+.pd-nav__item--active .pd-nav__dot { opacity: 1; }
+.pd-sidebar__profile { margin-top: auto; padding: 0 1.5rem; }
+.pd-avail--available { color: #10b981; }
+.pd-avail--busy { color: #f59e0b; }
+.pd-avail--offline { color: #6b7280; }
+.pd-jobs { display: flex; flex-direction: column; gap: 0.7rem; margin-top: 0.8rem; }
+.pd-job-row { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); padding: 0.9rem 1.1rem; border-radius: 10px; cursor: pointer; transition: border-color 0.2s; }
+.pd-job-row:hover { border-color: #c9a84c; }
+.pd-job-title { font-weight: 600; }
+.pd-job-meta { font-size: 0.8rem; color: #9a9a9a; margin-top: 0.2rem; }
+.pd-job-badge { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.25rem 0.6rem; border-radius: 999px; color: #fff; font-weight: 600; }
+.pd-call { color: #c9a84c; text-decoration: none; font-weight: 600; }
+.pd-call:hover { text-decoration: underline; }
+.pd-job-card__descr { font-size: 0.82rem; color: #9a9a9a; margin-top: 0.3rem; max-width: 460px; }
+.pd-job-card__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.8rem; margin: 1rem 0; }
+.pd-job-card__grid span { font-size: 0.65rem; letter-spacing: 0.15em; color: #7a7a7a; }
+.pd-job-card__grid p { margin-top: 0.2rem; font-size: 0.9rem; }
+.pd-job-card__photos { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; margin-top: 0.5rem; }
+.pd-photo-up { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.2); padding: 0.5rem 0.8rem; border-radius: 8px; cursor: pointer; }
+.pd-photo-up input { display: none; }
+.pd-photo-ok { color: #10b981; font-weight: 700; }
+.pd-history-pay { color: #c9a84c; font-weight: 600; font-size: 0.85rem; }
+.pd-avail-note { font-size: 0.85rem; color: #9a9a9a; margin-bottom: 1rem; }
+.pd-btn-gold:disabled { opacity: 0.45; cursor: not-allowed; }

@@ -428,7 +428,7 @@ app.get('/api/provider/earnings', authenticateToken, requireRole('provider'), (r
 // ----------------------------------------------------
 
 app.get('/api/promotions', (req, res) => {
-  const promos = db.prepare('SELECT * FROM promotions WHERE active = 1').all();
+  const promos = db.prepare('SELECT *, (active = 1) AS is_active FROM promotions WHERE active = 1').all();
   res.json(promos);
 });
 
@@ -465,6 +465,24 @@ app.get('/api/admin/bookings', authenticateToken, requireRole('admin'), (req, re
     ORDER BY b.created_at DESC
   `).all();
   res.json(bookings);
+});
+
+// Admin override: change booking status or reassign provider / mark completed (payout)
+app.put('/api/admin/bookings/:id', authenticateToken, requireRole('admin'), (req, res) => {
+  const { id } = req.params;
+  const { status, provider_id } = req.body;
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(id);
+  if (!booking) return res.status(404).json({ error: 'Booking not found' });
+  const provider = provider_id ? db.prepare('SELECT id FROM providers WHERE id = ?').get(provider_id) : null;
+  if (provider_id && !provider) return res.status(400).json({ error: 'Invalid provider' });
+
+  if (status === 'completed' && booking.status !== 'completed' && booking.provider_id) {
+    const payout = booking.total_price * 0.85;
+    db.prepare('UPDATE providers SET earnings = earnings + ? WHERE id = ?').run(payout, booking.provider_id);
+  }
+  db.prepare('UPDATE bookings SET status = COALESCE(?, status), provider_id = COALESCE(?, provider_id) WHERE id = ?')
+    .run(status || null, provider_id || null, id);
+  res.json({ message: `Booking #${id} updated` });
 });
 
 app.get('/api/admin/complaints', authenticateToken, requireRole('admin'), (req, res) => {
