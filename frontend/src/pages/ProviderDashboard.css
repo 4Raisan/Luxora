@@ -1566,7 +1566,7 @@
     min-height: 44px;
   }
   .pd-main {
-    padding: 1rem;
+    padding: 0;
   }
   .pd-stats-grid {
     grid-template-columns: 1fr;
@@ -1574,6 +1574,18 @@
   .pd-modal {
     width: 95vw;
     margin: 1rem auto;
+  }
+}
+
+.pd-bank-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .pd-bank-form-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1895,26 +1907,31 @@
 
   /* Topbar actions stay compact on narrow screens. */
   .pd-topbar {
-    gap: 0.6rem;
-    padding: 0.7rem 1rem;
+    gap: 0.5rem;
+    padding: 0.65rem 0.85rem;
   }
 
   .pd-topbar__actions {
-    flex: 1;
-    justify-content: space-between;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    gap: 0.45rem;
   }
 
   .pd-topbar__title {
     font-size: 0.72rem;
-    letter-spacing: 0.09em;
+    letter-spacing: 0.08em;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .pd-topbar__user-info { display: none; }
 
-  .pd-topbar__account-pill { padding: 0.35rem; }
+  .pd-topbar__account-pill { padding: 0.3rem; margin-right: 0; min-width: 40px; min-height: 40px; justify-content: center; }
 
-  /* Key topbar controls meet touch minimums on phones only. */
-  .pd-topbar__icon-btn { min-width: 44px; min-height: 44px; }
+  /* Key topbar controls meet touch minimums on phones without overflowing 320px. */
+  .pd-topbar__icon-btn { min-width: 40px; min-height: 40px; width: 40px; height: 40px; flex-shrink: 0; }
   .pd-drawer__close { min-width: 44px; min-height: 44px; }
 
   /* Compact typography */
@@ -2016,6 +2033,11 @@
   .pd-greeting__title { font-size: 1.15rem; }
   .pd-all-booking-actions > *,
   .pd-cr-actions > * { flex: 1 1 100%; }
+  .pd-topbar { padding: 0.6rem 0.75rem; gap: 0.4rem; }
+  .pd-topbar__title { font-size: 0.68rem; letter-spacing: 0.05em; }
+  .pd-topbar__actions { gap: 0.35rem; }
+  .pd-topbar__account-pill { min-width: 38px; min-height: 38px; padding: 0.25rem; }
+  .pd-topbar__icon-btn { min-width: 38px; min-height: 38px; width: 38px; height: 38px; }
 }
 
 /* ── Narrow phones (≤380px): stat tiles and topbar stay legible ──
@@ -2040,4 +2062,13 @@
   .pd-calendar__nav button { width: 36px; height: 36px; font-size: 1rem; border-radius: 8px; }
   .pd-calendar__day { min-height: 40px; font-size: 0.78rem; display: flex; align-items: center; justify-content: center; }
   .pd-calendar__dow { font-size: 0.6rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pd-modal,
+  .pd-drawer,
+  .pd-drawer-overlay {
+    animation: none !important;
+    transition: none !important;
+  }
 }

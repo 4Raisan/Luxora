@@ -423,6 +423,26 @@ const ProviderDashboard = () => {
     return () => window.clearInterval(timer)
   }, [])
 
+  useEffect(() => {
+    const anyOpen = Boolean(
+      showSettingsModal || showNotifModal || showProfileDrawer || pinDialog || selectedDetailsBooking
+    )
+    if (!anyOpen) return
+    const onKeyDown = (e) => {
+      if (e.key !== 'Escape') return
+      if (pinDialog) { setPinDialog(null); return }
+      if (showSettingsModal) {
+        if (!settingsSaving) setShowSettingsModal(false)
+        return
+      }
+      if (showNotifModal) { setShowNotifModal(false); return }
+      if (showProfileDrawer) { setShowProfileDrawer(false); return }
+      if (selectedDetailsBooking) setSelectedDetailsBooking(null)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [showSettingsModal, settingsSaving, showNotifModal, showProfileDrawer, pinDialog, selectedDetailsBooking])
+
   useRealtime({
     onEvent: (type, data) => {
       if (data?.metadata?.rescheduled) {
@@ -944,7 +964,7 @@ const ProviderDashboard = () => {
                   </div>
                 ) : <p className="pd-avail__hint">Add one Sri Lankan bank account before requesting a redemption.</p>}
 
-                <form onSubmit={saveBankAccount} style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.75rem' }}>
+                <form onSubmit={saveBankAccount} className="pd-bank-form-grid">
                   <select id="provider-bank-name" name="bank_name" className="pd-edit-input" value={bankForm.bank_name} onChange={(e) => setBankForm({ ...bankForm, bank_name: e.target.value })} required>
                     <option value="">Select Sri Lankan bank</option>
                     {SRI_LANKAN_BANKS.map((bank) => <option key={bank} value={bank}>{bank}</option>)}
@@ -1193,7 +1213,7 @@ const ProviderDashboard = () => {
           ) : (
             <>
               {providerKyc.status !== 'APPROVED' && (
-                <div style={{ background: 'rgba(20,20,25,0.95)', border: providerKyc.status === 'REJECTED' ? '1px solid #ef4444' : '1px solid var(--gold)', borderRadius: '14px', padding: '1.75rem', marginBottom: '2rem', width: '100%' }}>
+                <div style={{ gridColumn: '1 / -1', background: 'rgba(20,20,25,0.95)', border: providerKyc.status === 'REJECTED' ? '1px solid #ef4444' : '1px solid var(--gold)', borderRadius: '14px', padding: '1.75rem', marginBottom: '2rem', width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
                     <span style={{ fontSize: '1.5rem' }}>{providerKyc.status === 'REJECTED' ? '⚠️' : '⏳'}</span>
                     <div>
@@ -1462,7 +1482,7 @@ const ProviderDashboard = () => {
       {/* ── BOOKING DETAILS MODAL (customer details + photos + actions) ── */}
       {selectedDetailsBooking && (
         <div className="pd-drawer-overlay" onClick={() => setSelectedDetailsBooking(null)}>
-          <div className="pd-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="pd-modal" role="dialog" aria-modal="true" aria-label="Booking details" onClick={(e) => e.stopPropagation()}>
             <div className="pd-modal__header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <span style={{ fontSize: '1.4rem' }}>📅</span>
@@ -1590,7 +1610,7 @@ const ProviderDashboard = () => {
       {/* ── PIN VERIFICATION MODAL (start / complete service) ── */}
       {pinDialog && (
         <div className="pd-drawer-overlay" onClick={() => setPinDialog(null)}>
-          <div className="pd-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '460px' }}>
+          <div className="pd-modal" role="dialog" aria-modal="true" aria-label={pinDialog.next === 'in_progress' ? 'Start service PIN verification' : 'Complete service PIN verification'} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '460px' }}>
             <div className="pd-modal__header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <span style={{ fontSize: '1.4rem' }}>🔐</span>
@@ -1617,7 +1637,11 @@ const ProviderDashboard = () => {
                 value={pinDialog.pin}
                 autoFocus
                 onChange={(e) => setPinDialog((d) => ({ ...d, pin: e.target.value, error: '' }))}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !busy) submitPinStatus() }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.nativeEvent?.isComposing && e.keyCode !== 229 && !busy) {
+                    submitPinStatus()
+                  }
+                }}
               />
               {pinDialog.error && <p style={{ color: '#ef4444', fontSize: '0.82rem', marginTop: '0.5rem' }}>{pinDialog.error}</p>}
             </div>
@@ -1641,7 +1665,7 @@ const ProviderDashboard = () => {
       {/* ── PROVIDER PROFILE SLIDE DRAWER ── */}
       {showProfileDrawer && (
         <div className="pd-drawer-overlay" onClick={() => setShowProfileDrawer(false)}>
-          <div className="pd-drawer" onClick={(e) => e.stopPropagation()}>
+          <div className="pd-drawer" role="dialog" aria-modal="true" aria-label="Provider profile" onClick={(e) => e.stopPropagation()}>
             <div className="pd-drawer__header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div className="pd-drawer__avatar"><UserIcon /></div>
@@ -1697,7 +1721,7 @@ const ProviderDashboard = () => {
       {/* ── NOTIFICATIONS POPUP MODAL ── */}
       {showNotifModal && (
         <div className="pd-drawer-overlay" onClick={() => setShowNotifModal(false)}>
-          <div className="pd-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px', width: '90%' }}>
+          <div className="pd-modal" role="dialog" aria-modal="true" aria-label="Provider notifications" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px', width: '90%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', borderBottom: '1px solid #222', paddingBottom: '0.85rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
                 <span style={{ fontSize: '1.2rem' }}>🔔</span>
@@ -1763,7 +1787,7 @@ const ProviderDashboard = () => {
       {/* ── SETTINGS MODAL (profile name + towns served) ── */}
       {showSettingsModal && (
         <div className="pd-drawer-overlay" onClick={() => !settingsSaving && setShowSettingsModal(false)}>
-          <div className="pd-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px', width: '92%' }}>
+          <div className="pd-modal" role="dialog" aria-modal="true" aria-label="Provider settings" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px', width: '92%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #222', paddingBottom: '0.85rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
                 <span style={{ fontSize: '1.2rem' }}>⚙️</span>
