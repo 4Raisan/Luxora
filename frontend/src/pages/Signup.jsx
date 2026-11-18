@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { apiRequest } from '../services/api'
 import { ActionButton } from '../components/ui'
@@ -17,6 +17,18 @@ const Signup = () => {
   const [agreed, setAgreed] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(false)
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
+
+  useEffect(() => {
+    if (!showTermsModal && !showPrivacyModal) return undefined
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowTermsModal(false)
+        setShowPrivacyModal(false)
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [showTermsModal, showPrivacyModal])
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -205,8 +217,12 @@ const Signup = () => {
           </div>
 
           {/* Password */}
-          <div className="auth-field">
-            <div className="auth-input-wrap">
+          <div className="auth-field auth-field--peeker">
+            <div
+              className="auth-input-wrap"
+              onFocus={() => setIsPasswordFocused(true)}
+              onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setIsPasswordFocused(false) }}
+            >
               <PeekingEyes
                 isActive={isPasswordFocused}
                 textLength={form.password.length}
@@ -220,8 +236,6 @@ const Signup = () => {
                 placeholder="Password"
                 value={form.password}
                 onChange={handleChange}
-                onFocus={() => setIsPasswordFocused(true)}
-                onBlur={() => setIsPasswordFocused(false)}
                 required
                 autoComplete="new-password"
               />
@@ -231,6 +245,7 @@ const Signup = () => {
                 id="signup-toggle-password"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label="Toggle password visibility"
+                aria-pressed={showPassword}
               >
                 {showPassword ? (
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -248,8 +263,12 @@ const Signup = () => {
           </div>
 
           {/* Confirm Password */}
-          <div className="auth-field">
-            <div className="auth-input-wrap">
+          <div className="auth-field auth-field--peeker">
+            <div
+              className="auth-input-wrap"
+              onFocus={() => setIsConfirmFocused(true)}
+              onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setIsConfirmFocused(false) }}
+            >
               <PeekingEyes
                 isActive={isConfirmFocused}
                 textLength={form.confirm.length}
@@ -263,8 +282,6 @@ const Signup = () => {
                 placeholder="Confirm Password"
                 value={form.confirm}
                 onChange={handleChange}
-                onFocus={() => setIsConfirmFocused(true)}
-                onBlur={() => setIsConfirmFocused(false)}
                 required
                 autoComplete="new-password"
               />
@@ -274,6 +291,7 @@ const Signup = () => {
                 id="signup-toggle-confirm"
                 onClick={() => setShowConfirm(!showConfirm)}
                 aria-label="Toggle confirm password visibility"
+                aria-pressed={showConfirm}
               >
                 {showConfirm ? (
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -354,8 +372,8 @@ const Signup = () => {
 
       {/* ── Privacy Policy Modal Pop-up Window ── */}
       {showPrivacyModal && (
-        <div className="about-modal__backdrop" onClick={() => setShowPrivacyModal(false)}>
-          <div className="about-modal__window privacy-modal__window" onClick={(e) => e.stopPropagation()}>
+        <div className="about-modal__backdrop" role="presentation" onClick={() => setShowPrivacyModal(false)}>
+          <div className="about-modal__window privacy-modal__window" role="dialog" aria-modal="true" aria-label="Privacy Policy" onClick={(e) => e.stopPropagation()}>
             <button
               className="about-modal__close"
               onClick={() => setShowPrivacyModal(false)}
@@ -435,8 +453,8 @@ const Signup = () => {
 
       {/* ── Terms of Service Modal Pop-up Window ── */}
       {showTermsModal && (
-        <div className="about-modal__backdrop" onClick={() => setShowTermsModal(false)}>
-          <div className="about-modal__window privacy-modal__window" onClick={(e) => e.stopPropagation()}>
+        <div className="about-modal__backdrop" role="presentation" onClick={() => setShowTermsModal(false)}>
+          <div className="about-modal__window privacy-modal__window" role="dialog" aria-modal="true" aria-label="Terms of Service" onClick={(e) => e.stopPropagation()}>
             <button
               className="about-modal__close"
               onClick={() => setShowTermsModal(false)}

@@ -275,6 +275,8 @@
 /* Select */
 .pr-select-wrap {
   position: relative;
+  width: 100%;
+  min-width: 0;
 }
 
 .pr-select {
@@ -282,6 +284,9 @@
   cursor: pointer;
   padding-right: 2.5rem;
   color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .pr-select option {
@@ -613,13 +618,23 @@
   gap: 1rem;
 }
 
-.pr-footer__links a {
+.pr-footer__links a,
+.pr-footer__links button {
   color: #444;
   text-decoration: none;
   transition: color 0.2s;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  padding: 0;
 }
 
-.pr-footer__links a:hover {
+.pr-footer__links a:hover,
+.pr-footer__links button:hover {
   color: var(--gold);
 }
 
@@ -638,4 +653,11 @@
   .pr-header__tag { display: none; }
   .pr-title-wrap { padding: 2rem 0.5rem 0; }
   .pr-card { padding: 1.4rem 1rem; border-radius: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pr-card,
+  .pr-success__icon {
+    animation: none !important;
+  }
 }

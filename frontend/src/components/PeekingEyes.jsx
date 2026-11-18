@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useId } from 'react'
 import './PeekingEyes.css'
 
 /**
@@ -14,28 +14,46 @@ const PeekingEyes = ({
   position = 'left',
   className = '',
 }) => {
+  const uid = useId().replace(/:/g, '')
+  const whiteId = `robotWhite3D-${uid}`
+  const visorId = `robotVisor-${uid}`
+  const cyanGlowId = `robotCyanGlow-${uid}`
+  const cyanBloomId = `robotCyanBloom-${uid}`
+  const shadowId = `robotShadow-${uid}`
+
   const [blink, setBlink] = useState(false)
   const [isTyping, setIsTyping] = useState(false)
 
-  // Digital LED eye blink cycle
+  // Digital LED eye blink cycle (disabled under reduced motion)
   useEffect(() => {
-    if (!isActive) return
+    if (!isActive || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
 
+    let resetTimer = null
+    let secondTimer = null
+    let thirdTimer = null
     const triggerBlink = () => {
       setBlink(true)
-      setTimeout(() => setBlink(false), 160)
+      resetTimer = setTimeout(() => setBlink(false), 160)
     }
 
     const interval = setInterval(() => {
       if (Math.random() > 0.2) {
         triggerBlink()
         if (Math.random() > 0.65) {
-          setTimeout(triggerBlink, 240)
+          secondTimer = setTimeout(() => {
+            setBlink(true)
+            thirdTimer = setTimeout(() => setBlink(false), 160)
+          }, 240)
         }
       }
     }, 3200)
 
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+      if (resetTimer) clearTimeout(resetTimer)
+      if (secondTimer) clearTimeout(secondTimer)
+      if (thirdTimer) clearTimeout(thirdTimer)
+    }
   }, [isActive])
 
   // Keypress micro-bounce on typing
@@ -73,7 +91,7 @@ const PeekingEyes = ({
         >
           <defs>
             {/* 3D Pearlescent White Shell Gradient */}
-            <radialGradient id="robotWhite3D" cx="50%" cy="20%" r="75%">
+            <radialGradient id={whiteId} cx="50%" cy="20%" r="75%">
               <stop offset="0%" stopColor="#ffffff" />
               <stop offset="55%" stopColor="#f3f6fa" />
               <stop offset="85%" stopColor="#e1e7f0" />
@@ -81,14 +99,14 @@ const PeekingEyes = ({
             </radialGradient>
 
             {/* Glossy Obsidian Visor Screen */}
-            <linearGradient id="robotVisor" x1="0%" y1="0%" x2="0%" y2="100%">
+            <linearGradient id={visorId} x1="0%" y1="0%" x2="0%" y2="100%">
               <stop offset="0%" stopColor="#1e232a" />
               <stop offset="35%" stopColor="#0f1318" />
               <stop offset="100%" stopColor="#05070a" />
             </linearGradient>
 
             {/* Glowing Cyan LED Eye Gradient */}
-            <radialGradient id="robotCyanGlow" cx="45%" cy="40%" r="65%">
+            <radialGradient id={cyanGlowId} cx="45%" cy="40%" r="65%">
               <stop offset="0%" stopColor="#ffffff" />
               <stop offset="35%" stopColor="#67e8f9" />
               <stop offset="75%" stopColor="#06b6d4" />
@@ -96,23 +114,23 @@ const PeekingEyes = ({
             </radialGradient>
 
             {/* Cyan LED Bloom Filter */}
-            <filter id="robotCyanBloom" x="-40%" y="-40%" width="180%" height="180%">
+            <filter id={cyanBloomId} x="-40%" y="-40%" width="180%" height="180%">
               <feGaussianBlur in="SourceGraphic" stdDeviation="2.2" result="blur" />
               <feComposite in="SourceGraphic" in2="blur" operator="over" />
             </filter>
 
             {/* Studio Drop Shadow */}
-            <filter id="robotShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <filter id={shadowId} x="-20%" y="-20%" width="140%" height="140%">
               <feDropShadow dx="0" dy="2.5" stdDeviation="2.5" floodColor="#000000" floodOpacity="0.75" />
             </filter>
           </defs>
 
           {/* ── 1. Top Half-Head Dome (Sliced Flush at Bottom) ── */}
-          <g className="robot-half-head" filter="url(#robotShadow)">
+          <g className="robot-half-head" filter={`url(#${shadowId})`}>
             {/* Smooth Pearlescent White Capsule Dome */}
             <path
               d="M 10 46 C 10 14, 86 14, 86 46 Z"
-              fill="url(#robotWhite3D)"
+              fill={`url(#${whiteId})`}
               stroke="#cbd5e1"
               strokeWidth="0.8"
             />
@@ -123,7 +141,7 @@ const PeekingEyes = ({
             {/* ── 2. Curved Glossy Obsidian Screen Visor ── */}
             <path
               d="M 18 46 C 18 20, 78 20, 78 46 Z"
-              fill="url(#robotVisor)"
+              fill={`url(#${visorId})`}
               stroke="#0f172a"
               strokeWidth="0.8"
             />
@@ -140,43 +158,46 @@ const PeekingEyes = ({
             {/* ── 3. Glowing Cyan LED Eyes Overlay ── */}
             {!isPasswordVisible && (
               <g
-                className={`robot-led-eyes ${blink ? 'is-blinking' : ''}`}
-                filter="url(#robotCyanBloom)"
+                filter={`url(#${cyanBloomId})`}
                 style={{
                   transform: `translate(${pupilX}px, ${pupilY}px)`,
-                  transformOrigin: '48px 33px',
                   transition: 'transform 0.14s cubic-bezier(0.2, 0.8, 0.2, 1)',
                 }}
               >
-                {/* Left Cyan LED Eye (Curved Crescent Oval) */}
-                <ellipse
-                  cx="34"
-                  cy="34"
-                  rx="6.8"
-                  ry="5.2"
-                  fill="url(#robotCyanGlow)"
-                  transform="rotate(-8 34 34)"
-                />
-                {/* Left Eye High-Intensity Core Spot */}
-                <ellipse cx="34" cy="33.2" rx="4.2" ry="2.6" fill="#ffffff" transform="rotate(-8 34 34)" />
+                <g
+                  className={`robot-led-eyes ${blink ? 'is-blinking' : ''}`}
+                  style={{ transformOrigin: '48px 33px' }}
+                >
+                  {/* Left Cyan LED Eye (Curved Crescent Oval) */}
+                  <ellipse
+                    cx="34"
+                    cy="34"
+                    rx="6.8"
+                    ry="5.2"
+                    fill={`url(#${cyanGlowId})`}
+                    transform="rotate(-8 34 34)"
+                  />
+                  {/* Left Eye High-Intensity Core Spot */}
+                  <ellipse cx="34" cy="33.2" rx="4.2" ry="2.6" fill="#ffffff" transform="rotate(-8 34 34)" />
 
-                {/* Right Cyan LED Eye (Curved Crescent Oval) */}
-                <ellipse
-                  cx="62"
-                  cy="34"
-                  rx="6.8"
-                  ry="5.2"
-                  fill="url(#robotCyanGlow)"
-                  transform="rotate(8 62 34)"
-                />
-                {/* Right Eye High-Intensity Core Spot */}
-                <ellipse cx="62" cy="33.2" rx="4.2" ry="2.6" fill="#ffffff" transform="rotate(8 62 34)" />
+                  {/* Right Cyan LED Eye (Curved Crescent Oval) */}
+                  <ellipse
+                    cx="62"
+                    cy="34"
+                    rx="6.8"
+                    ry="5.2"
+                    fill={`url(#${cyanGlowId})`}
+                    transform="rotate(8 62 34)"
+                  />
+                  {/* Right Eye High-Intensity Core Spot */}
+                  <ellipse cx="62" cy="33.2" rx="4.2" ry="2.6" fill="#ffffff" transform="rotate(8 62 34)" />
+                </g>
               </g>
             )}
 
             {/* When password is revealed in cleartext: Cyan LED Eyes squint into shy smiling arcs (> <) */}
             {isPasswordVisible && (
-              <g className="robot-shy-eyes" filter="url(#robotCyanBloom)">
+              <g className="robot-shy-eyes" filter={`url(#${cyanBloomId})`}>
                 <path
                   d="M 28 35 Q 34 30 40 35"
                   fill="none"

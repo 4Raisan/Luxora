@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { apiRequest } from '../services/api'
 import { ActionButton } from '../components/ui'
@@ -19,6 +19,15 @@ const Login = () => {
   const [forgotSuccessMsg, setForgotSuccessMsg] = useState('')
   const [forgotErrorMsg, setForgotErrorMsg] = useState('')
   const [forgotLoading, setForgotLoading] = useState(false)
+
+  useEffect(() => {
+    if (!showForgotModal) return undefined
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setShowForgotModal(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [showForgotModal])
 
   const handleSendResetLink = async (e) => {
     e.preventDefault()
@@ -339,6 +348,7 @@ const Login = () => {
       {showForgotModal && (
         <div
           className="cd-support-overlay"
+          role="presentation"
           onClick={() => setShowForgotModal(false)}
           style={{
             position: 'fixed',
@@ -357,6 +367,9 @@ const Login = () => {
         >
           <div
             className="auth-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="login-forgot-modal-title"
             onClick={(e) => e.stopPropagation()}
             style={{ maxWidth: '440px', width: '100%', position: 'relative', margin: 0 }}
           >
@@ -391,7 +404,7 @@ const Login = () => {
             </button>
 
             <div className="auth-card__header">
-              <h2 className="auth-card__title" style={{ fontSize: '1.4rem' }}>Reset Password</h2>
+              <h2 id="login-forgot-modal-title" className="auth-card__title" style={{ fontSize: '1.4rem' }}>Reset Password</h2>
               <p className="auth-card__subtitle">Recover access to your Luxora concierge account</p>
             </div>
 
@@ -409,8 +422,9 @@ const Login = () => {
 
             <form onSubmit={handleSendResetLink} className="auth-form" style={{ marginTop: '1rem' }}>
                 <div className="auth-field">
-                  <label style={{ display: 'block', color: '#888', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '0.4rem' }}>ACCOUNT EMAIL ADDRESS</label>
+                  <label htmlFor="login-forgot-email" style={{ display: 'block', color: '#888', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '0.4rem' }}>ACCOUNT EMAIL ADDRESS</label>
                   <input
+                    id="login-forgot-email"
                     type="email"
                     className="auth-input"
                     placeholder="Enter registered email (e.g. tester@gmail.com)"

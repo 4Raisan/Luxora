@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { apiRequest } from '../services/api'
 import { ActionButton } from '../components/ui'
 import { generateProviderPDF } from '../utils/pdfGenerator'
 import { SRI_LANKA_PROVINCES, SRI_LANKA_TOWNS } from '../data/sriLankaLocations'
 import './ProviderRegister.css'
+import '../components/Footer.css'
 
 const steps = [
   { num: '01', label: 'Personal Details' },
@@ -38,6 +39,16 @@ const ProviderRegister = () => {
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [activeInfoModal, setActiveInfoModal] = useState(null) // 'help' | 'privacy' | 'terms' | null
+
+  useEffect(() => {
+    if (!activeInfoModal) return undefined
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setActiveInfoModal(null)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [activeInfoModal])
 
   const [form, setForm] = useState({
     fullName: '',
@@ -119,14 +130,16 @@ const ProviderRegister = () => {
     const file = e.target.files[0]
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file only (JPG, PNG, WEBP).')
+      setSubmitError('Please select an image file only (JPG, PNG, WEBP).')
       return
     }
+    setSubmitError('')
     const compressedUrl = await compressImage(file)
     setForm((prev) => ({ ...prev, [field]: file, [previewField]: compressedUrl }))
   }
 
   const toggleService = (s) => {
+    setSubmitError('')
     setForm((prev) => ({
       ...prev,
       services: prev.services.includes(s)
@@ -137,28 +150,29 @@ const ProviderRegister = () => {
 
   const nextStep = (e) => {
     e.preventDefault()
+    setSubmitError('')
     if (step === 0) {
       if (form.mobile.length !== 10) {
-        alert('Mobile number must be exactly 10 digits (e.g. 0771234567).')
+        setSubmitError('Mobile number must be exactly 10 digits (e.g. 0771234567).')
         return
       }
       if ((form.password || '').length < 8 || !/[a-zA-Z]/.test(form.password) || !/\d/.test(form.password)) {
-        alert('Password must be at least 8 characters and contain both letters and numbers.')
+        setSubmitError('Password must be at least 8 characters and contain both letters and numbers.')
         return
       }
       if (form.password !== form.confirmPassword) {
-        alert('Password and Re-enter Password do not match.')
+        setSubmitError('Password and Re-enter Password do not match.')
         return
       }
     }
     if (step === 2) {
       if (form.services.length === 0) {
-        alert('Please select at least one service offered (Auto Care, Garden Care, or Pet Care).')
+        setSubmitError('Please select at least one service offered (Auto Care, Garden Care, or Pet Care).')
         return
       }
     }
     if (step === 1 && !SRI_LANKA_TOWNS.some((location) => location.name === form.city)) {
-      alert('Please select a town from the Sri Lanka provider registration list.')
+      setSubmitError('Please select a town from the Sri Lanka provider registration list.')
       return
     }
     if (step < steps.length - 1) setStep(step + 1)
@@ -320,7 +334,7 @@ const ProviderRegister = () => {
         </Link>
         <div className="pr-header__right">
           <span className="pr-header__tag">PARTNER REGISTRATION</span>
-          <button className="pr-header__help" aria-label="Help">
+          <button type="button" className="pr-header__help" aria-label="Help" onClick={() => setActiveInfoModal('help')}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5"/>
               <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -392,6 +406,12 @@ const ProviderRegister = () => {
           <h2 className="pr-card__step-title">{steps[step].label}</h2>
         </div>
 
+        {submitError && step < steps.length - 1 && (
+          <div role="alert" style={{ color: '#ef4444', fontSize: '0.84rem', marginBottom: '1rem', padding: '0.65rem 0.9rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.28)', borderRadius: '8px' }}>
+            {submitError}
+          </div>
+        )}
+
         {/* ── STEP 0: Personal Details ── */}
         {step === 0 && (
           <form className="pr-form" onSubmit={nextStep} id="pr-step1-form">
@@ -412,7 +432,7 @@ const ProviderRegister = () => {
 
             <div className="pr-row">
               <input id="pr-password" name="password" type="password" className="pr-input"
-                placeholder="Password (min 8, letters + numbers)" aria-label="Password" value={form.password}
+                placeholder="Password (8+ chars, A–z & 0–9)" aria-label="Password" value={form.password}
                 onChange={handleChange} minLength={8} autoComplete="new-password" required />
               <input id="pr-confirm-password" name="confirmPassword" type="password" className="pr-input"
                 placeholder="Re-enter Password" aria-label="Confirm Password" value={form.confirmPassword}
@@ -460,18 +480,21 @@ const ProviderRegister = () => {
             </div>
 
             <div className="pr-row">
-              <select id="pr-city" name="city" className="pr-input pr-select" value={form.city} onChange={handleChange} required>
-                <option value="">Select your service town</option>
-                {SRI_LANKA_PROVINCES.map((province) => (
-                  <optgroup key={province} label={`${province} Province`}>
-                    {SRI_LANKA_TOWNS.filter((location) => location.province === province).map((location) => (
-                      <option key={location.name} value={location.name}>{location.name}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+              <div className="pr-select-wrap">
+                <select id="pr-city" name="city" className="pr-input pr-select" aria-label="Service town" value={form.city} onChange={handleChange} required>
+                  <option value="">Select service town</option>
+                  {SRI_LANKA_PROVINCES.map((province) => (
+                    <optgroup key={province} label={`${province} Province`}>
+                      {SRI_LANKA_TOWNS.filter((location) => location.province === province).map((location) => (
+                        <option key={location.name} value={location.name}>{location.name}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                <span className="pr-select-arrow" aria-hidden="true">▾</span>
+              </div>
               <input id="pr-website" name="website" type="url" className="pr-input"
-                placeholder="Website (optional)" value={form.website}
+                placeholder="Website (optional)" aria-label="Website (optional)" value={form.website}
                 onChange={handleChange} />
             </div>
 
@@ -563,12 +586,44 @@ const ProviderRegister = () => {
       {/* Footer */}
       <footer className="pr-footer">
         <span>LUXORA CONCIERGE</span>
-        <span>© 2024 LUXORA CONCIERGE. ALL RIGHTS RESERVED.</span>
+        <span>© {new Date().getFullYear()} LUXORA CONCIERGE. ALL RIGHTS RESERVED.</span>
         <div className="pr-footer__links">
-          <a href="#">Privacy Policy</a>
-          <a href="#">Terms of Service</a>
+          <button type="button" onClick={() => setActiveInfoModal('privacy')}>Privacy Policy</button>
+          <button type="button" onClick={() => setActiveInfoModal('terms')}>Terms of Service</button>
         </div>
       </footer>
+
+      {activeInfoModal && (
+        <div className="about-modal__backdrop" role="presentation" onClick={() => setActiveInfoModal(null)}>
+          <div className="about-modal__window privacy-modal__window" role="dialog" aria-modal="true" aria-label="Partner Registration Information" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="about-modal__close" onClick={() => setActiveInfoModal(null)} aria-label="Close modal">✕</button>
+            <div className="about-modal__badge">{activeInfoModal === 'help' ? 'PARTNER SUPPORT' : 'LEGAL'}</div>
+            <h2 className="about-modal__title">
+              {activeInfoModal === 'help' ? 'Partner Registration Help' : activeInfoModal === 'privacy' ? 'Privacy Policy' : 'Terms of Service'}
+            </h2>
+            <div className="about-modal__content privacy-modal__content">
+              {activeInfoModal === 'help' ? (
+                <>
+                  <p>Follow the four steps to apply as an elite Luxora service partner:</p>
+                  <ul>
+                    <li><strong>Personal Details &amp; KYC:</strong> Enter your legal name, NIC number, 10-digit Sri Lankan mobile number, and clear photos of your NIC (front &amp; back) plus a selfie.</li>
+                    <li><strong>Business Info:</strong> Choose your primary service town and provide the registered business name and address.</li>
+                    <li><strong>Services Offered:</strong> Select one or more care categories (Auto Care, Garden Care, Pet Care) you are qualified to fulfill.</li>
+                    <li><strong>Verification:</strong> Applications are reviewed by Luxora Operations before job dispatch unlocks.</li>
+                  </ul>
+                </>
+              ) : activeInfoModal === 'privacy' ? (
+                <p>Luxora collects applicant contact details, business profile information, and KYC identity verification images solely for partner onboarding, compliance verification, and dispatch operations.</p>
+              ) : (
+                <p>Partner accounts must maintain accurate KYC records, uphold Luxora service quality standards, verify appointments via customer PIN codes, and upload required before/after evidence where specified.</p>
+              )}
+            </div>
+            <div className="about-modal__footer">
+              <button type="button" className="about-modal__btn" onClick={() => setActiveInfoModal(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

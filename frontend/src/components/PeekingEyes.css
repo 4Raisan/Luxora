@@ -82,3 +82,12 @@
 .robot-half-wrapper.is-shy .robot-led-eyes {
   opacity: 0.25;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .robot-half-wrapper,
+  .robot-led-eyes,
+  .robot-shy-eyes {
+    animation: none !important;
+    transition: none !important;
+  }
+}
