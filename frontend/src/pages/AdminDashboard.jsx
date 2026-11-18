@@ -107,19 +107,29 @@ const ghostBtn = { background: 'transparent', color: '#ccc', border: '1px solid 
 const redBtn = { background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.5)', padding: '0.6rem 1.1rem', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'inherit' }
 const fieldStyle = { width: '100%', background: '#101012', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#eee', padding: '0.6rem 0.8rem', fontSize: '0.85rem', fontFamily: 'inherit', boxSizing: 'border-box' }
 
-const Modal = ({ title, eyebrow = 'LUXORA ADMIN', onClose, children, footer }) => (
-  <div className="ad-notif-overlay" onClick={onClose}>
-    <div className="ad-notif-modal" onClick={(e) => e.stopPropagation()}>
-      <div className="ad-notif-modal__header">
-        <span className="ad-notif-modal__eyebrow">{eyebrow}</span>
-        <h3 className="ad-notif-modal__title">{title}</h3>
-        <button className="ad-notif-modal__close" onClick={onClose} aria-label="Close">✕</button>
+const Modal = ({ title, eyebrow = 'LUXORA ADMIN', onClose, children, footer }) => {
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') onClose?.()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [onClose])
+
+  return (
+    <div className="ad-notif-overlay" role="presentation" onClick={onClose}>
+      <div className="ad-notif-modal" role="dialog" aria-modal="true" aria-label={typeof title === 'string' ? title : 'Admin dialog'} onClick={(e) => e.stopPropagation()}>
+        <div className="ad-notif-modal__header">
+          <span className="ad-notif-modal__eyebrow">{eyebrow}</span>
+          <h3 className="ad-notif-modal__title">{title}</h3>
+          <button type="button" className="ad-notif-modal__close" onClick={onClose} aria-label="Close">✕</button>
+        </div>
+        {children}
+        {footer && <div className="ad-notif-modal__footer">{footer}</div>}
       </div>
-      {children}
-      {footer && <div className="ad-notif-modal__footer">{footer}</div>}
     </div>
-  </div>
-)
+  )
+}
 
 const MetricCard = ({ label, value, icon }) => (
   <div className="ad-metric-card">
@@ -1661,7 +1671,7 @@ const AdminDashboard = () => {
           {webhookDetail.error && <p style={{ color: '#ef4444', fontWeight: 600 }}>{webhookDetail.error}</p>}
           {webhookDetail.event && (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem 1rem', fontSize: '0.85rem', color: '#ccc', marginBottom: '1rem' }}>
+              <div className="ad-form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem 1rem', fontSize: '0.85rem', color: '#ccc', marginBottom: '1rem' }}>
                 <span>Gateway: <strong>{webhookDetail.event.gateway}</strong></span>
                 <span>Event: <strong>{webhookDetail.event.event_kind}</strong></span>
                 <span>Reference: <strong>{webhookDetail.event.reference}</strong></span>
