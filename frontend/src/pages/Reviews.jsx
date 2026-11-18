@@ -55,6 +55,9 @@ export default function Reviews() {
   return (
     <motion.div className="rv" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       <div className="rv-card">
+        <button type="button" className="rv-back" onClick={() => navigate('/customer-dashboard')}>
+          ← Back to Dashboard
+        </button>
         <p className="rv-eyebrow">SHARE YOUR EXPERIENCE</p>
         <h1 className="rv-title">Rate a Service</h1>
 
@@ -86,7 +89,8 @@ export default function Reviews() {
                   onMouseEnter={() => setHover(n)}
                   onMouseLeave={() => setHover(0)}
                   onClick={() => setRating(n)}
-                  aria-label={`${n} star`}
+                  aria-label={`${n} ${n === 1 ? 'star' : 'stars'}`}
+                  aria-pressed={rating === n}
                 >
                   ★
                 </button>

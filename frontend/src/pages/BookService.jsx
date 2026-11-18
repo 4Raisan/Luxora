@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { apiRequest } from '../services/api'
 import { ActionButton } from '../components/ui'
 import SessionConfirmationAnimation from '../components/SessionConfirmationAnimation'
+import { colomboToday } from '../utils/colomboTime'
 import './BookService.css'
 
 export default function BookService() {
@@ -144,6 +145,9 @@ export default function BookService() {
   return (
     <motion.div className="bs" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       <div className="bs-card">
+        <button type="button" className="bs-back" onClick={() => navigate('/customer-dashboard')}>
+          ← Back to Dashboard
+        </button>
         <p className="bs-eyebrow">RESERVE A CONCIERGE</p>
         <h1 className="bs-title">Book a Service</h1>
         <p className="bs-sub">Select a bespoke service and a time that suits your residence. A KYC-verified specialist will be assigned automatically.</p>
@@ -260,6 +264,7 @@ export default function BookService() {
                 <div role="group" aria-labelledby="bs-petmode-label" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0.4rem' }}>
                   <button
                     type="button"
+                    aria-pressed={petType === 'dog'}
                     onClick={() => setPetType('dog')}
                     style={{
                       padding: '0.75rem 1rem',
@@ -279,6 +284,7 @@ export default function BookService() {
                   </button>
                   <button
                     type="button"
+                    aria-pressed={petType === 'cat'}
                     onClick={() => setPetType('cat')}
                     style={{
                       padding: '0.75rem 1rem',
@@ -303,7 +309,7 @@ export default function BookService() {
             <div className="bs-row">
               <div className="bs-field">
                 <label className="bs-label" htmlFor="bs-date">Date</label>
-                <input id="bs-date" className="bs-input" type="date" value={date} min={new Date().toISOString().split('T')[0]} onChange={(e) => setDate(e.target.value)} required />
+                <input id="bs-date" className="bs-input" type="date" value={date} min={colomboToday()} onChange={(e) => setDate(e.target.value)} required />
               </div>
               <div className="bs-field">
                 <label className="bs-label" htmlFor="bs-time">Time</label>

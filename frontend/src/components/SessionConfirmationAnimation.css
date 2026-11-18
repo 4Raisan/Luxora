@@ -681,3 +681,20 @@
   font-weight: 800;
   letter-spacing: 0.05em;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .sca-scene *,
+  .sca-road-dash,
+  .sca-car-wrap,
+  .sca-headlight-beam,
+  .sca-wheel,
+  .sca-garden-item,
+  .sca-sun,
+  .sca-pet-walk,
+  .sca-pet-paw,
+  .sca-bubble,
+  .sca-combo-item {
+    animation: none !important;
+    transition: none !important;
+  }
+}
