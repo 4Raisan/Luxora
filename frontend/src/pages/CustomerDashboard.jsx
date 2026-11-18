@@ -1495,7 +1495,81 @@ const CustomerDashboard = () => {
     void loadServerData()
   }
 
+  const activateOnKey = (e, handler) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handler()
+    }
+  }
+
   useEffect(() => () => clearTimeout(actionToastTimer.current), [])
+
+  useEffect(() => {
+    const anyOpen = Boolean(
+      paymentSuccess || payhereResult || customRequestSuccessModal || showCustomRequestModal ||
+      selectedReceiptItem || selectedActivePackageToManage || selectedMembership ||
+      selectedPackageToBook || complaintResolution || showNotifDrawer || showSupportModal ||
+      showCancelledSuccessModal || showCancelPackageConfirmModal || cancelBookingConfirmModal ||
+      sessionBookingSuccessModal || refundCancelConfirm || refundRequestModal ||
+      sessionBookingError || showInsufficientTokensModal || reviewTarget ||
+      showProfileDrawer || showAddressModal
+    )
+    if (!anyOpen) return
+    const onKeyDown = (e) => {
+      if (e.key !== 'Escape') return
+      if (paymentSuccess) { setPaymentSuccess(null); return }
+      if (payhereResult) {
+        if (payhereResult.status !== 'checking') setPayhereResult(null)
+        return
+      }
+      if (customRequestSuccessModal) { setCustomRequestSuccessModal(null); return }
+      if (showCustomRequestModal) { setShowCustomRequestModal(false); return }
+      if (selectedReceiptItem) { setSelectedReceiptItem(null); return }
+      if (selectedActivePackageToManage) {
+        setSelectedActivePackageToManage(null)
+        setShowCancelConfirmStep(false)
+        return
+      }
+      if (selectedMembership) { setSelectedMembership(null); return }
+      if (selectedPackageToBook) { setSelectedPackageToBook(null); return }
+      if (complaintResolution) { setComplaintResolution(null); return }
+      if (showNotifDrawer) { setShowNotifDrawer(false); return }
+      if (showSupportModal) { setShowSupportModal(false); return }
+      if (showCancelledSuccessModal) { setShowCancelledSuccessModal(false); return }
+      if (showCancelPackageConfirmModal) { setShowCancelPackageConfirmModal(false); return }
+      if (cancelBookingConfirmModal) { setCancelBookingConfirmModal(null); return }
+      if (sessionBookingSuccessModal) { setSessionBookingSuccessModal(null); return }
+      if (refundCancelConfirm) {
+        if (!refundCancelConfirm.busy) setRefundCancelConfirm(null)
+        return
+      }
+      if (refundRequestModal) {
+        if (!refundRequestModal.busy) setRefundRequestModal(null)
+        return
+      }
+      if (sessionBookingError) { setSessionBookingError(null); return }
+      if (showInsufficientTokensModal) { setShowInsufficientTokensModal(false); return }
+      if (reviewTarget) {
+        if (!reviewBusy) setReviewTarget(null)
+        return
+      }
+      if (showProfileDrawer) { setShowProfileDrawer(false); return }
+      if (showAddressModal) {
+        setShowAddressModal(false)
+        sessionStorage.setItem('address_remind_later', 'true')
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [
+    paymentSuccess, payhereResult, customRequestSuccessModal, showCustomRequestModal,
+    selectedReceiptItem, selectedActivePackageToManage, selectedMembership,
+    selectedPackageToBook, complaintResolution, showNotifDrawer, showSupportModal,
+    showCancelledSuccessModal, showCancelPackageConfirmModal, cancelBookingConfirmModal,
+    sessionBookingSuccessModal, refundCancelConfirm, refundRequestModal,
+    sessionBookingError, showInsufficientTokensModal, reviewTarget, reviewBusy,
+    showProfileDrawer, showAddressModal,
+  ])
 
   const unreadCount = notifications.filter(n => n.unread).length
 
@@ -1870,32 +1944,6 @@ const CustomerDashboard = () => {
             </button>
           </nav>
 
-          {/* V2 Slice 6: email verification prompt — informational, never an access gate */}
-          {(() => {
-            let sessionUser = null
-            try { sessionUser = JSON.parse(sessionStorage.getItem('user') || 'null') } catch { sessionUser = null }
-            if (!sessionUser?.email || sessionUser.emailVerified !== false) return null
-            return (
-              <div style={{ marginTop: '1rem', padding: '0.8rem 1rem', border: '1px solid rgba(201, 168, 76, 0.4)', borderRadius: '12px', background: 'rgba(201, 168, 76, 0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.9rem', flexWrap: 'wrap' }}>
-                <span style={{ color: '#d8cba0', fontSize: '0.82rem' }}>
-                  Please verify your email address (<span style={{ fontFamily: 'monospace' }}>{sessionUser.email}</span>) — check your inbox for the verification link.
-                </span>
-                {emailResendState === 'sent'
-                  ? <span style={{ color: '#22c55e', fontSize: '0.8rem', fontWeight: 700 }}>If the account is unverified, a new link has been sent.</span>
-                  : (
-                    <button
-                      type="button"
-                      disabled={emailResendState === 'busy'}
-                      onClick={resendVerificationEmail}
-                      style={{ background: 'transparent', border: '1px solid var(--gold, #c9a84c)', color: 'var(--gold, #c9a84c)', padding: '0.4rem 0.9rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, cursor: emailResendState === 'busy' ? 'wait' : 'pointer' }}
-                    >
-                      {emailResendState === 'busy' ? 'Sending…' : 'Resend verification email'}
-                    </button>
-                  )}
-              </div>
-            )
-          })()}
-
           {/* Header Right Actions */}
           <div className="cd-header__right">
             {/* Token / coin counters (server entitlements) — desktop copy;
@@ -1932,7 +1980,7 @@ const CustomerDashboard = () => {
               <HelpIcon /> Support
             </button>
 
-            {/* User Profile Info */}
+          {/* User Profile Info */}
             <div
               className={`cd-user-info ${isGoldMember ? 'cd-user-pill--gold' : ''}`}
               onClick={() => {
@@ -1946,6 +1994,15 @@ const CustomerDashboard = () => {
                 setProfileSavedMsg('')
                 setShowProfileDrawer(true)
               }}
+              onKeyDown={(e) => activateOnKey(e, () => {
+                setProfileEdit({
+                  name: currentUser.name || '',
+                  phone: currentUser.phone || '',
+                  town: userAddress?.city || ''
+                })
+                setProfileSavedMsg('')
+                setShowProfileDrawer(true)
+              })}
               role="button"
               tabIndex={0}
               title="View My Profile"
@@ -1981,6 +2038,34 @@ const CustomerDashboard = () => {
           </div>
         </div>
       </header>
+
+      {/* V2 Slice 6: email verification prompt — informational, rendered outside the sticky header so mobile bars never clip */}
+      {(() => {
+        let sessionUser = null
+        try { sessionUser = JSON.parse(sessionStorage.getItem('user') || 'null') } catch { sessionUser = null }
+        if (!sessionUser?.email || sessionUser.emailVerified !== false) return null
+        return (
+          <div className="cd-main-container cd-verify-banner-wrap">
+            <div className="cd-verify-banner">
+              <span style={{ color: '#d8cba0', fontSize: '0.82rem' }}>
+                Please verify your email address (<span style={{ fontFamily: 'monospace' }}>{sessionUser.email}</span>) — check your inbox for the verification link.
+              </span>
+              {emailResendState === 'sent'
+                ? <span style={{ color: '#22c55e', fontSize: '0.8rem', fontWeight: 700 }}>If the account is unverified, a new link has been sent.</span>
+                : (
+                  <button
+                    type="button"
+                    disabled={emailResendState === 'busy'}
+                    onClick={resendVerificationEmail}
+                    style={{ background: 'transparent', border: '1px solid var(--gold, #c9a84c)', color: 'var(--gold, #c9a84c)', padding: '0.4rem 0.9rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, cursor: emailResendState === 'busy' ? 'wait' : 'pointer' }}
+                  >
+                    {emailResendState === 'busy' ? 'Sending…' : 'Resend verification email'}
+                  </button>
+                )}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Mobile tab navigation — compact pills in the content flow, so the
           phone header stays a single bar (desktop keeps the in-header nav). */}
@@ -2062,6 +2147,7 @@ const CustomerDashboard = () => {
                       key={'srv-' + sub.id}
                       className="cd-package-card cd-package-card--membership"
                       onClick={() => setSelectedMembership(sub)}
+                      onKeyDown={(e) => activateOnKey(e, () => setSelectedMembership(sub))}
                       role="button"
                       tabIndex={0}
                       title="Click to manage membership"
@@ -2086,6 +2172,7 @@ const CustomerDashboard = () => {
                       key={pkg.id}
                       className="cd-package-card cd-active-pkg-clickable animate-fade-in"
                       onClick={() => { setSelectedActivePackageToManage(pkg); setShowCancelConfirmStep(false) }}
+                      onKeyDown={(e) => activateOnKey(e, () => { setSelectedActivePackageToManage(pkg); setShowCancelConfirmStep(false) })}
                       role="button"
                       tabIndex={0}
                       title="Click to manage or cancel subscription"
@@ -2120,7 +2207,7 @@ const CustomerDashboard = () => {
               className="cd-duo-booking-grid"
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 460px), 1fr))',
                 gap: '1.75rem',
                 alignItems: 'stretch',
                 marginTop: '1.75rem'
@@ -2185,8 +2272,14 @@ const CustomerDashboard = () => {
                             packageId: catItem.id,
                             petType: catItem.id === 'pet' ? prev.petType : '',
                           }))}
+                          onKeyDown={(e) => activateOnKey(e, () => setServiceBookingForm(prev => ({
+                            ...prev,
+                            packageId: catItem.id,
+                            petType: catItem.id === 'pet' ? prev.petType : '',
+                          })))}
                           role="button"
                           tabIndex={0}
+                          aria-pressed={isSelected}
                           style={{
                             background: isSelected ? 'rgba(201, 168, 76, 0.14)' : '#161619',
                             border: isSelected ? '2px solid var(--gold, #c9a84c)' : '1px solid #2a2a30',
@@ -3287,7 +3380,7 @@ const CustomerDashboard = () => {
       {/* ── My Profile Slide Drawer ── */}
       {showProfileDrawer && (
         <div className="cd-drawer-overlay" onClick={() => setShowProfileDrawer(false)}>
-          <div className="cd-drawer-window" onClick={(e) => e.stopPropagation()}>
+          <div className="cd-drawer-window" role="dialog" aria-modal="true" aria-label="My profile" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div className="cd-drawer-header">
               <span className="cd-drawer-title">MY PROFILE</span>
@@ -3455,8 +3548,8 @@ const CustomerDashboard = () => {
 
       {/* ── Rate & Review Modal (proposal: rate and review service providers) ── */}
       {reviewTarget && (
-        <div className="cd-drawer-overlay" onClick={() => setReviewTarget(null)}>
-          <div className="cd-drawer-window" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+        <div className="cd-drawer-overlay" onClick={() => !reviewBusy && setReviewTarget(null)}>
+          <div className="cd-drawer-window" role="dialog" aria-modal="true" aria-label="Rate your service" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
             <div className="cd-drawer-header">
               <span className="cd-drawer-title">RATE YOUR SERVICE</span>
               <button className="cd-drawer-close" onClick={() => setReviewTarget(null)} aria-label="Close review">✕</button>
@@ -3533,7 +3626,7 @@ const CustomerDashboard = () => {
       {/* ── First-Time Login Address Setup Modal Popup ── */}
       {showAddressModal && (
         <div className="cd-address-overlay">
-          <div className="cd-address-modal animate-fade-in" style={{ position: 'relative' }}>
+          <div className="cd-address-modal animate-fade-in" role="dialog" aria-modal="true" aria-label="Service address setup" style={{ position: 'relative' }}>
             {/* Upper Right Close / Remind Me Later Button */}
             <button
               className="auth-card-close-btn"
@@ -3738,6 +3831,9 @@ const CustomerDashboard = () => {
         <div className="cd-address-overlay" onClick={() => setShowInsufficientTokensModal(false)}>
           <div
             className="cd-address-modal animate-fade-in"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Insufficient service coins"
             onClick={(e) => e.stopPropagation()}
             style={{
               maxWidth: '480px',
@@ -3850,6 +3946,9 @@ const CustomerDashboard = () => {
         <div className="cd-address-overlay" onClick={() => setSessionBookingError(null)}>
           <div
             className="cd-address-modal animate-fade-in"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Booking session error"
             onClick={(e) => e.stopPropagation()}
             style={{
               maxWidth: '480px',
@@ -3940,6 +4039,9 @@ const CustomerDashboard = () => {
         <div className="cd-address-overlay" onClick={() => !refundRequestModal.busy && setRefundRequestModal(null)}>
           <div
             className="cd-address-modal animate-fade-in"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Request a refund"
             onClick={(e) => e.stopPropagation()}
             style={{ maxWidth: '460px', position: 'relative' }}
           >
@@ -4023,6 +4125,9 @@ const CustomerDashboard = () => {
         <div className="cd-address-overlay" onClick={() => !refundCancelConfirm.busy && setRefundCancelConfirm(null)}>
           <div
             className="cd-address-modal animate-fade-in"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Cancel refund request"
             onClick={(e) => e.stopPropagation()}
             style={{ maxWidth: '440px', textAlign: 'center', padding: '2.2rem 1.8rem', position: 'relative' }}
           >
@@ -4090,6 +4195,9 @@ const CustomerDashboard = () => {
         >
           <div
             className="cd-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Service session confirmed"
             onClick={(e) => e.stopPropagation()}
             style={{
               width: '100%',
@@ -4311,6 +4419,9 @@ const CustomerDashboard = () => {
         >
           <div
             className="cd-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Cancel booking confirmation"
             onClick={(e) => e.stopPropagation()}
             style={{
               width: '100%',
@@ -4516,6 +4627,9 @@ const CustomerDashboard = () => {
         <div className="cd-address-overlay" onClick={() => setShowCancelPackageConfirmModal(false)}>
           <div
             className="cd-address-modal animate-fade-in"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm subscription cancellation"
             onClick={(e) => e.stopPropagation()}
             style={{
               maxWidth: '520px',
@@ -4631,6 +4745,9 @@ const CustomerDashboard = () => {
         <div className="cd-address-overlay" onClick={() => setShowCancelledSuccessModal(false)}>
           <div
             className="cd-address-modal animate-fade-in"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Subscription cancelled"
             onClick={(e) => e.stopPropagation()}
             style={{
               maxWidth: '460px',
@@ -4717,7 +4834,7 @@ const CustomerDashboard = () => {
       {/* ── Concierge Support Message Modal Popup ── */}
       {showSupportModal && (
         <div className="cd-support-overlay" onClick={() => setShowSupportModal(false)}>
-          <div className="cd-support-modal animate-fade-in" onClick={(e) => e.stopPropagation()}>
+          <div className="cd-support-modal animate-fade-in" role="dialog" aria-modal="true" aria-label="Concierge support" onClick={(e) => e.stopPropagation()}>
             <div className="cd-support-modal__header">
               <div className="cd-support-icon-box"><HelpIcon /></div>
               <h2 className="cd-support-modal__title">Concierge Support</h2>
@@ -4804,6 +4921,9 @@ const CustomerDashboard = () => {
         >
           <div
             className="animate-scale-up"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Notifications"
             onClick={(e) => e.stopPropagation()}
             style={{
               background: '#141416',
@@ -4905,7 +5025,7 @@ const CustomerDashboard = () => {
 
       {complaintResolution && (
         <div className="cd-address-overlay" onClick={() => setComplaintResolution(null)}>
-          <div className="cd-address-modal animate-fade-in" onClick={(event) => event.stopPropagation()} style={{ maxWidth: '560px', padding: '2rem', position: 'relative' }}>
+          <div className="cd-address-modal animate-fade-in" role="dialog" aria-modal="true" aria-label="Complaint resolution" onClick={(event) => event.stopPropagation()} style={{ maxWidth: '560px', padding: '2rem', position: 'relative' }}>
             <button type="button" className="auth-card-close-btn" onClick={() => setComplaintResolution(null)} aria-label="Close complaint response">✕</button>
             <span style={{ color: 'var(--gold, #c9a84c)', fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.1em' }}>COMPLAINT RESOLUTION</span>
             <h3 style={{ color: '#fff', margin: '0.5rem 0 0.35rem', fontSize: '1.2rem' }}>{complaintResolution.subject}</h3>
@@ -4926,7 +5046,7 @@ const CustomerDashboard = () => {
       {/* ── Booking Checkout Confirmation Modal ── */}
       {selectedPackageToBook && (
         <div className="cd-support-overlay" onClick={() => setSelectedPackageToBook(null)}>
-          <div className="cd-support-modal animate-fade-in" onClick={(e) => e.stopPropagation()}>
+          <div className="cd-support-modal animate-fade-in" role="dialog" aria-modal="true" aria-label="Confirm package booking" onClick={(e) => e.stopPropagation()}>
             <div className="cd-support-modal__header">
               <div className="cd-support-icon-box"><ShieldIcon /></div>
               <h2 className="cd-support-modal__title">Confirm Package Booking</h2>
@@ -4947,8 +5067,10 @@ const CustomerDashboard = () => {
                 <div
                   className={`cd-billing-option-card ${bookingBillingType === 'auto_renew' ? 'active' : ''}`}
                   onClick={() => setBookingBillingType('auto_renew')}
+                  onKeyDown={(e) => activateOnKey(e, () => setBookingBillingType('auto_renew'))}
                   role="button"
                   tabIndex={0}
+                  aria-pressed={bookingBillingType === 'auto_renew'}
                 >
                   <div className="cd-billing-option-radio">
                     <span className={`cd-radio-circle ${bookingBillingType === 'auto_renew' ? 'selected' : ''}`} />
@@ -4962,8 +5084,10 @@ const CustomerDashboard = () => {
                 <div
                   className={`cd-billing-option-card ${bookingBillingType === 'one_time' ? 'active' : ''}`}
                   onClick={() => setBookingBillingType('one_time')}
+                  onKeyDown={(e) => activateOnKey(e, () => setBookingBillingType('one_time'))}
                   role="button"
                   tabIndex={0}
+                  aria-pressed={bookingBillingType === 'one_time'}
                 >
                   <div className="cd-billing-option-radio">
                     <span className={`cd-radio-circle ${bookingBillingType === 'one_time' ? 'selected' : ''}`} />
@@ -5107,7 +5231,7 @@ const CustomerDashboard = () => {
       {/* ── Membership Manage Popup (renewal + cancel for server subscriptions) ── */}
       {selectedMembership && (
         <div className="cd-support-overlay" onClick={() => setSelectedMembership(null)}>
-          <div className="cd-support-modal cd-manage-membership-modal animate-fade-in" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '460px' }}>
+          <div className="cd-support-modal cd-manage-membership-modal animate-fade-in" role="dialog" aria-modal="true" aria-label="Manage membership" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '460px' }}>
             <div className="cd-support-modal__header">
               <div className="cd-support-icon-box"><ShieldIcon /></div>
               <div>
@@ -5162,7 +5286,7 @@ const CustomerDashboard = () => {
       {/* ── Active Package Details & Cancellation Modal ── */}
       {selectedActivePackageToManage && (
         <div className="cd-support-overlay" onClick={() => { setSelectedActivePackageToManage(null); setShowCancelConfirmStep(false) }}>
-          <div className="cd-support-modal cd-manage-pkg-modal animate-fade-in" onClick={(e) => e.stopPropagation()}>
+          <div className="cd-support-modal cd-manage-pkg-modal animate-fade-in" role="dialog" aria-modal="true" aria-label="Manage package" onClick={(e) => e.stopPropagation()}>
             <div className="cd-support-modal__header">
               <div className="cd-support-icon-box">
                 {selectedActivePackageToManage.cat === 'auto' && <CarIcon />}
@@ -5264,7 +5388,7 @@ const CustomerDashboard = () => {
       {/* ── Official Luxora Tax Invoice / Receipt Modal Popup ── */}
       {selectedReceiptItem && (
         <div className="cd-support-overlay" onClick={() => setSelectedReceiptItem(null)}>
-          <div className="cd-support-modal cd-receipt-modal animate-fade-in" onClick={(e) => e.stopPropagation()}>
+          <div className="cd-support-modal cd-receipt-modal animate-fade-in" role="dialog" aria-modal="true" aria-label="Tax invoice and receipt" onClick={(e) => e.stopPropagation()}>
             <div className="cd-support-modal__header">
               <div className="cd-support-icon-box"><ShieldIcon /></div>
               <h2 className="cd-support-modal__title">TAX INVOICE &amp; RECEIPT</h2>
@@ -5341,6 +5465,9 @@ const CustomerDashboard = () => {
         <div className="cd-drawer-overlay animate-fade-in" onClick={() => setShowCustomRequestModal(false)}>
           <div
             className="cd-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Submit custom service request"
             onClick={(e) => e.stopPropagation()}
             style={{ width: '100%', maxWidth: '520px', background: '#121212', border: '1px solid rgba(201, 168, 76, 0.3)', borderRadius: '16px', padding: '1.75rem' }}
           >
@@ -5475,6 +5602,9 @@ const CustomerDashboard = () => {
         >
           <div
             className="cd-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Custom service request sent"
             onClick={(e) => e.stopPropagation()}
             style={{
               width: '100%',

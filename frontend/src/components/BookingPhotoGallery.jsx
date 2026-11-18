@@ -82,6 +82,15 @@ const BookingPhotoGallery = ({ bookingId, token: tokenProp, refreshKey = 0, titl
   const [openPhoto, setOpenPhoto] = useState(null)
 
   useEffect(() => {
+    if (!openPhoto) return undefined
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setOpenPhoto(null)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [openPhoto])
+
+  useEffect(() => {
     if (!bookingId || !token) {
       setPhotos([])
       setLoading(false)
