@@ -1,11 +1,19 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import useScrollReveal from '../hooks/useScrollReveal'
 import './About.css'
+import './Footer.css'
 
 const About = () => {
   const sectionRef = useRef(null)
   useScrollReveal(sectionRef, { stagger: 0.1 })
   const [showVisionModal, setShowVisionModal] = useState(false)
+
+  useEffect(() => {
+    if (!showVisionModal) return undefined
+    const onKeyDown = (e) => { if (e.key === 'Escape') setShowVisionModal(false) }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [showVisionModal])
 
   const pillars = [
     { icon: '◈', title: 'Discretion', desc: 'Your privacy, preferences, and personal spaces are treated with the utmost respect.' },
@@ -78,9 +86,16 @@ const About = () => {
 
       {/* Our Vision Modal Pop-up Window */}
       {showVisionModal && (
-        <div className="about-modal__backdrop" onClick={() => setShowVisionModal(false)}>
-          <div className="about-modal__window vision-modal__window" onClick={(e) => e.stopPropagation()}>
+        <div className="about-modal__backdrop" role="presentation" onClick={() => setShowVisionModal(false)}>
+          <div
+            className="about-modal__window vision-modal__window"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="about-vision-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
+              type="button"
               className="about-modal__close"
               onClick={() => setShowVisionModal(false)}
               aria-label="Close Vision Window"
@@ -89,7 +104,7 @@ const About = () => {
             </button>
             
             <div className="about-modal__badge">OUR VISION</div>
-            <h2 className="about-modal__title">Excellence Refined</h2>
+            <h2 id="about-vision-modal-title" className="about-modal__title">Excellence Refined</h2>
             
             <div className="vision-modal__quote-wrap">
               <span className="vision-modal__quote-mark">“</span>

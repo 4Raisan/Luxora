@@ -340,3 +340,20 @@
   }
   .plan-card--featured:hover { transform: translateY(-5px); }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .plans__grid,
+  .plan-card--featured {
+    animation: none;
+  }
+  .plan-card,
+  .plans__tab,
+  .plans__tab-icon {
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+  }
+  .plan-card:hover,
+  .plan-card--featured:hover,
+  .plans__tab:hover .plans__tab-icon {
+    transform: none;
+  }
+}

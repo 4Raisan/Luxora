@@ -50,7 +50,8 @@ const Hero = () => {
 
   const scrollTo = (id) => {
     const el = document.getElementById(id)
-    if (el) el.scrollIntoView({ behavior: 'smooth' })
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+    if (el) el.scrollIntoView({ behavior })
   }
 
   return (

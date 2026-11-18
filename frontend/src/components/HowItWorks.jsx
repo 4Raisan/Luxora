@@ -147,7 +147,7 @@ export const CardSection = () => {
           trigger: section,
           start: 'top 65%',
           onEnter: () => timeline.play(),
-          onEnterBack: () => timeline.reverse(),
+          onEnterBack: () => timeline.play(),
           onLeaveBack: () => timeline.reverse(),
         })
 

@@ -139,4 +139,6 @@
   .how-it-works__stage { overflow-x: auto; padding-bottom: 0.75rem; }
   .how-it-works__steps { transform: none !important; }
   .journey-card { transform: none !important; }
+  .journey-card__face--front { display: none; }
+  .journey-card__face--back { transform: none; }
 }

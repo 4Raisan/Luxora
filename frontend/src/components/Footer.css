@@ -52,8 +52,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
   transition: var(--transition);
   text-decoration: none;
+}
+
+.footer__share-feedback {
+  align-self: center;
+  color: var(--gold);
+  font-size: 0.76rem;
+  font-weight: 600;
 }
 
 .footer__social:hover {
@@ -491,6 +499,20 @@
   .contact-modal__val {
     font-size: 0.85rem;
     overflow-wrap: anywhere;
+  }
+}
+
+@supports (scrollbar-color: auto) {
+  .privacy-modal__content {
+    scrollbar-color: var(--gold) #1e1e1e;
+    scrollbar-width: thin;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-modal__backdrop,
+  .about-modal__window {
+    animation: none;
   }
 }
 

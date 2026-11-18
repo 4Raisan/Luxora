@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './Footer.css'
 
 const Footer = () => {
@@ -10,6 +10,45 @@ const Footer = () => {
   const [showMembershipTermsModal, setShowMembershipTermsModal] = useState(false)
   const [showCookieModal, setShowCookieModal] = useState(false)
   const [showContactModal, setShowContactModal] = useState(false)
+  const [shareFeedback, setShareFeedback] = useState('')
+
+  useEffect(() => {
+    const anyModalOpen = showAboutModal || showVisionModal || showPrivacyModal || showTermsModal || showMembershipTermsModal || showCookieModal || showContactModal
+    if (!anyModalOpen) return undefined
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowAboutModal(false)
+        setShowVisionModal(false)
+        setShowPrivacyModal(false)
+        setShowTermsModal(false)
+        setShowMembershipTermsModal(false)
+        setShowCookieModal(false)
+        setShowContactModal(false)
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [showAboutModal, showVisionModal, showPrivacyModal, showTermsModal, showMembershipTermsModal, showCookieModal, showContactModal])
+
+  const handleShare = async () => {
+    const shareUrl = window.location.href
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Luxora', url: shareUrl })
+        return
+      }
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl)
+        setShareFeedback('Link copied!')
+        setTimeout(() => setShareFeedback(''), 2200)
+        return
+      }
+    } catch (err) {
+      if (err?.name === 'AbortError') return
+    }
+    setShareFeedback(shareUrl)
+    setTimeout(() => setShareFeedback(''), 3000)
+  }
 
   const columns = [
     {
@@ -37,9 +76,10 @@ const Footer = () => {
         const navOffset = 80
         const elementPosition = el.getBoundingClientRect().top
         const offsetPosition = elementPosition + window.pageYOffset - navOffset
+        const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
         window.scrollTo({
           top: offsetPosition,
-          behavior: 'smooth'
+          behavior
         })
       }
     }
@@ -98,7 +138,7 @@ const Footer = () => {
               The definitive platform for elite estate management and personal concierge excellence.
             </p>
             <div className="footer__socials">
-              <button type="button" className="footer__social" id="footer-social-share" aria-label="Share" onClick={() => navigator.share?.({ title: 'Luxora', url: window.location.href })}>
+              <button type="button" className="footer__social" id="footer-social-share" aria-label="Share" onClick={handleShare}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                   <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="1.5"/>
                   <circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"/>
@@ -106,6 +146,7 @@ const Footer = () => {
                   <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
               </button>
+              {shareFeedback && <span className="footer__share-feedback" role="status">{shareFeedback}</span>}
             </div>
           </div>
 
@@ -153,8 +194,8 @@ const Footer = () => {
 
       {/* About Us Modal Pop-up Window */}
       {showAboutModal && (
-        <div className="about-modal__backdrop" onClick={() => setShowAboutModal(false)}>
-          <div className="about-modal__window" onClick={(e) => e.stopPropagation()}>
+        <div className="about-modal__backdrop" role="presentation" onClick={() => setShowAboutModal(false)}>
+          <div className="about-modal__window" role="dialog" aria-modal="true" aria-label="About Us" onClick={(e) => e.stopPropagation()}>
             <button
               className="about-modal__close"
               onClick={() => setShowAboutModal(false)}
@@ -192,8 +233,8 @@ const Footer = () => {
 
       {/* Our Vision Modal Pop-up Window */}
       {showVisionModal && (
-        <div className="about-modal__backdrop" onClick={() => setShowVisionModal(false)}>
-          <div className="about-modal__window vision-modal__window" onClick={(e) => e.stopPropagation()}>
+        <div className="about-modal__backdrop" role="presentation" onClick={() => setShowVisionModal(false)}>
+          <div className="about-modal__window vision-modal__window" role="dialog" aria-modal="true" aria-label="Our Vision" onClick={(e) => e.stopPropagation()}>
             <button
               className="about-modal__close"
               onClick={() => setShowVisionModal(false)}
@@ -226,8 +267,8 @@ const Footer = () => {
 
       {/* Contact Us Modal Pop-up Window */}
       {showContactModal && (
-        <div className="about-modal__backdrop" onClick={() => setShowContactModal(false)}>
-          <div className="about-modal__window contact-modal__window" onClick={(e) => e.stopPropagation()}>
+        <div className="about-modal__backdrop" role="presentation" onClick={() => setShowContactModal(false)}>
+          <div className="about-modal__window contact-modal__window" role="dialog" aria-modal="true" aria-label="Contact Us" onClick={(e) => e.stopPropagation()}>
             <button
               className="about-modal__close"
               onClick={() => setShowContactModal(false)}
@@ -292,8 +333,8 @@ const Footer = () => {
 
       {/* Privacy Policy Modal Pop-up Window */}
       {showPrivacyModal && (
-        <div className="about-modal__backdrop" onClick={() => setShowPrivacyModal(false)}>
-          <div className="about-modal__window privacy-modal__window" onClick={(e) => e.stopPropagation()}>
+        <div className="about-modal__backdrop" role="presentation" onClick={() => setShowPrivacyModal(false)}>
+          <div className="about-modal__window privacy-modal__window" role="dialog" aria-modal="true" aria-label="Privacy Policy" onClick={(e) => e.stopPropagation()}>
             <button
               className="about-modal__close"
               onClick={() => setShowPrivacyModal(false)}
@@ -385,8 +426,8 @@ const Footer = () => {
 
       {/* Terms of Service Modal Pop-up Window */}
       {showTermsModal && (
-        <div className="about-modal__backdrop" onClick={() => setShowTermsModal(false)}>
-          <div className="about-modal__window privacy-modal__window" onClick={(e) => e.stopPropagation()}>
+        <div className="about-modal__backdrop" role="presentation" onClick={() => setShowTermsModal(false)}>
+          <div className="about-modal__window privacy-modal__window" role="dialog" aria-modal="true" aria-label="Terms of Service" onClick={(e) => e.stopPropagation()}>
             <button
               className="about-modal__close"
               onClick={() => setShowTermsModal(false)}
@@ -485,8 +526,8 @@ const Footer = () => {
 
       {/* Membership Terms & Conditions Modal Pop-up Window */}
       {showMembershipTermsModal && (
-        <div className="about-modal__backdrop" onClick={() => setShowMembershipTermsModal(false)}>
-          <div className="about-modal__window privacy-modal__window" onClick={(e) => e.stopPropagation()}>
+        <div className="about-modal__backdrop" role="presentation" onClick={() => setShowMembershipTermsModal(false)}>
+          <div className="about-modal__window privacy-modal__window" role="dialog" aria-modal="true" aria-label="Membership Terms and Conditions" onClick={(e) => e.stopPropagation()}>
             <button
               className="about-modal__close"
               onClick={() => setShowMembershipTermsModal(false)}
@@ -526,8 +567,8 @@ const Footer = () => {
 
       {/* Cookie Policy Modal Pop-up Window */}
       {showCookieModal && (
-        <div className="about-modal__backdrop" onClick={() => setShowCookieModal(false)}>
-          <div className="about-modal__window privacy-modal__window" onClick={(e) => e.stopPropagation()}>
+        <div className="about-modal__backdrop" role="presentation" onClick={() => setShowCookieModal(false)}>
+          <div className="about-modal__window privacy-modal__window" role="dialog" aria-modal="true" aria-label="Cookie Policy" onClick={(e) => e.stopPropagation()}>
             <button
               className="about-modal__close"
               onClick={() => setShowCookieModal(false)}

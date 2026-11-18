@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { MotionConfig } from 'framer-motion'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import Stats from './components/Stats'
@@ -62,28 +63,30 @@ const ChatbotRouteGate = () => {
 
 function App() {
   return (
-    <BrowserRouter>
-      <CursorGlow />
-      <div className="app">
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/provider-register" element={<ProviderRegister />} />
-            <Route path="/customer-dashboard" element={<RequireAuth allow={['CUSTOMER']}><ErrorBoundary><CustomerDashboard /></ErrorBoundary></RequireAuth>} />
-            <Route path="/customer-requests" element={<RequireAuth allow={['CUSTOMER']}><ErrorBoundary><CustomerCustomRequests /></ErrorBoundary></RequireAuth>} />
-            <Route path="/admin-dashboard" element={<RequireAuth allow={['ADMIN']}><ErrorBoundary><AdminDashboard /></ErrorBoundary></RequireAuth>} />
-            <Route path="/provider-dashboard" element={<RequireAuth allow={['PROVIDER']}><ErrorBoundary><ProviderDashboard /></ErrorBoundary></RequireAuth>} />
-            <Route path="/book-service" element={<RequireAuth allow={['CUSTOMER']}><ErrorBoundary><BookService /></ErrorBoundary></RequireAuth>} />
-            <Route path="/reviews" element={<RequireAuth allow={['CUSTOMER']}><ErrorBoundary><Reviews /></ErrorBoundary></RequireAuth>} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
-          </Routes>
-        </Suspense>
-        <ChatbotRouteGate />
-      </div>
-    </BrowserRouter>
+    <MotionConfig reducedMotion="user">
+      <BrowserRouter>
+        <CursorGlow />
+        <div className="app">
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/provider-register" element={<ProviderRegister />} />
+              <Route path="/customer-dashboard" element={<RequireAuth allow={['CUSTOMER']}><ErrorBoundary><CustomerDashboard /></ErrorBoundary></RequireAuth>} />
+              <Route path="/customer-requests" element={<RequireAuth allow={['CUSTOMER']}><ErrorBoundary><CustomerCustomRequests /></ErrorBoundary></RequireAuth>} />
+              <Route path="/admin-dashboard" element={<RequireAuth allow={['ADMIN']}><ErrorBoundary><AdminDashboard /></ErrorBoundary></RequireAuth>} />
+              <Route path="/provider-dashboard" element={<RequireAuth allow={['PROVIDER']}><ErrorBoundary><ProviderDashboard /></ErrorBoundary></RequireAuth>} />
+              <Route path="/book-service" element={<RequireAuth allow={['CUSTOMER']}><ErrorBoundary><BookService /></ErrorBoundary></RequireAuth>} />
+              <Route path="/reviews" element={<RequireAuth allow={['CUSTOMER']}><ErrorBoundary><Reviews /></ErrorBoundary></RequireAuth>} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+            </Routes>
+          </Suspense>
+          <ChatbotRouteGate />
+        </div>
+      </BrowserRouter>
+    </MotionConfig>
   )
 }
 

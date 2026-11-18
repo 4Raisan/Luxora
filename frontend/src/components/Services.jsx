@@ -113,7 +113,8 @@ const Services = () => {
                 onClick={() => {
                   window.dispatchEvent(new CustomEvent('select-plan-category', { detail: service.categoryKey }))
                   const el = document.getElementById('plans')
-                  if (el) el.scrollIntoView({ behavior: 'smooth' })
+                  const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+                  if (el) el.scrollIntoView({ behavior })
                 }}
               >
                 Learn More →

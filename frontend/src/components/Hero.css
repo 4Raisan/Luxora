@@ -221,6 +221,12 @@
   }
 }
 
+@media (max-height: 760px) {
+  .hero__scroll {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero__bg {
     animation: none;

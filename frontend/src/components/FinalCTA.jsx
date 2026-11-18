@@ -10,7 +10,8 @@ const FinalCTA = () => {
 
   const scrollToPlans = () => {
     const el = document.getElementById('plans')
-    if (el) el.scrollIntoView({ behavior: 'smooth' })
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+    if (el) el.scrollIntoView({ behavior })
   }
 
   return (

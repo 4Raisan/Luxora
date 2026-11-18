@@ -129,6 +129,23 @@ img {
   border-radius: 3px;
 }
 
+@supports (scrollbar-color: auto) {
+  html {
+    scrollbar-color: rgba(201, 168, 76, 0.55) var(--dark);
+    scrollbar-width: thin;
+  }
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
 /* Selection */
 ::selection {
   background: rgba(201, 168, 76, 0.3);
@@ -136,6 +153,10 @@ img {
 }
 
 /* Animations */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;

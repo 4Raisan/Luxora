@@ -8,7 +8,8 @@ const useCountUp = (target, duration = 2000, start = false) => {
   useEffect(() => {
     if (!target) return
     const targetStr = String(target)
-    if (!start || targetStr.includes('/')) {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!start || targetStr.includes('/') || prefersReducedMotion) {
       setCount(targetStr)
       return
     }
@@ -36,11 +37,11 @@ const useCountUp = (target, duration = 2000, start = false) => {
   return count || '0'
 }
 
-const StatItem = ({ value, label, delay, started }) => {
+const StatItem = ({ value, label, started }) => {
   const animated = useCountUp(value, 2200, started)
 
   return (
-    <div className="stat" data-reveal style={{ animationDelay: `${delay}s` }}>
+    <div className="stat" data-reveal>
       <div className="stat__value">{animated}</div>
       <div className="stat__label">{label}</div>
     </div>

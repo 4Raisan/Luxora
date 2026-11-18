@@ -39,6 +39,15 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  useEffect(() => {
+    if (!menuOpen) return undefined
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setMenuOpen(false)
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [menuOpen])
+
   const navLinks = ['Home', 'Services', 'Plans', 'Contact']
 
   const handleNavClick = (link) => {
@@ -50,9 +59,10 @@ const Navbar = () => {
       const navOffset = 80
       const elementPosition = el.getBoundingClientRect().top
       const offsetPosition = elementPosition + window.pageYOffset - navOffset
+      const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
       window.scrollTo({
         top: offsetPosition,
-        behavior: 'smooth'
+        behavior
       })
     }
   }
@@ -61,7 +71,14 @@ const Navbar = () => {
     <nav className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}>
       <div className="navbar__inner">
         {/* Logo */}
-        <a href="#" className="navbar__logo" onClick={() => handleNavClick('Home')}>
+        <a
+          href="#home"
+          className="navbar__logo"
+          onClick={(e) => {
+            e.preventDefault()
+            handleNavClick('Home')
+          }}
+        >
           <img src="/luxora-logo.png" alt="LUXORA" className="navbar__logo-img" />
         </a>
 
@@ -92,16 +109,19 @@ const Navbar = () => {
 
         {/* Hamburger */}
         <button
+          type="button"
           className={`navbar__hamburger ${menuOpen ? 'open' : ''}`}
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Toggle menu"
+          aria-expanded={menuOpen}
+          aria-controls="navbar-mobile-drawer"
         >
           <span /><span /><span />
         </button>
       </div>
 
       {/* Mobile Menu */}
-      <div className={`navbar__mobile ${menuOpen ? 'navbar__mobile--open' : ''}`}>
+      <div id="navbar-mobile-drawer" className={`navbar__mobile ${menuOpen ? 'navbar__mobile--open' : ''}`}>
         {navLinks.map((link) => (
           <button
             key={link}

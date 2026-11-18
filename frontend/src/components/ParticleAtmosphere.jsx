@@ -36,6 +36,7 @@ export default function ParticleAtmosphere({ className = '' }) {
     if (!context) return undefined
 
     let animationFrame = 0
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let width = window.innerWidth
     let height = window.innerHeight
     let particles = []
@@ -95,35 +96,37 @@ export default function ParticleAtmosphere({ className = '' }) {
       }
 
       particles.forEach((particle) => {
-        if (mouseVisible) {
-          const dx = particle.x - mouseX
-          const dy = particle.y - mouseY
-          const distance = Math.sqrt(dx * dx + dy * dy)
-          if (distance > 0 && distance < REPULSION_RADIUS) {
-            const force = (1 - distance / REPULSION_RADIUS) * 1.15
-            particle.vx += (dx / distance) * force
-            particle.vy += (dy / distance) * force
+        if (!prefersReducedMotion) {
+          if (mouseVisible) {
+            const dx = particle.x - mouseX
+            const dy = particle.y - mouseY
+            const distance = Math.sqrt(dx * dx + dy * dy)
+            if (distance > 0 && distance < REPULSION_RADIUS) {
+              const force = (1 - distance / REPULSION_RADIUS) * 1.15
+              particle.vx += (dx / distance) * force
+              particle.vy += (dy / distance) * force
+            }
           }
+
+          // Friction eases every scattered particle back to its individual drift.
+          particle.vx = particle.vx * 0.95 + particle.baseVx * 0.05
+          particle.vy = particle.vy * 0.95 + particle.baseVy * 0.05
+          const speed = Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy)
+          if (speed > 5.5) {
+            particle.vx = (particle.vx / speed) * 5.5
+            particle.vy = (particle.vy / speed) * 5.5
+          }
+
+          particle.x += particle.vx
+          particle.y += particle.vy
+          const margin = particle.radius * 3
+          if (particle.x < -margin) particle.x = width + margin
+          if (particle.x > width + margin) particle.x = -margin
+          if (particle.y < -margin) particle.y = height + margin
+          if (particle.y > height + margin) particle.y = -margin
+
+          particle.pulse += particle.pulseSpeed
         }
-
-        // Friction eases every scattered particle back to its individual drift.
-        particle.vx = particle.vx * 0.95 + particle.baseVx * 0.05
-        particle.vy = particle.vy * 0.95 + particle.baseVy * 0.05
-        const speed = Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy)
-        if (speed > 5.5) {
-          particle.vx = (particle.vx / speed) * 5.5
-          particle.vy = (particle.vy / speed) * 5.5
-        }
-
-        particle.x += particle.vx
-        particle.y += particle.vy
-        const margin = particle.radius * 3
-        if (particle.x < -margin) particle.x = width + margin
-        if (particle.x > width + margin) particle.x = -margin
-        if (particle.y < -margin) particle.y = height + margin
-        if (particle.y > height + margin) particle.y = -margin
-
-        particle.pulse += particle.pulseSpeed
         const opacity = 0.2 + ((Math.sin(particle.pulse) + 1) / 2) * 0.65
         const particleGlow = context.createRadialGradient(
           particle.x,
@@ -142,13 +145,33 @@ export default function ParticleAtmosphere({ className = '' }) {
         context.fill()
       })
 
-      animationFrame = window.requestAnimationFrame(render)
+      if (!prefersReducedMotion && !document.hidden) {
+        animationFrame = window.requestAnimationFrame(render)
+      } else {
+        animationFrame = 0
+      }
+    }
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden && !prefersReducedMotion && !animationFrame) {
+        animationFrame = window.requestAnimationFrame(render)
+      }
     }
 
     resize()
+    if (prefersReducedMotion) {
+      const handleReducedResize = () => { resize(); render() }
+      render()
+      window.addEventListener('resize', handleReducedResize, { passive: true })
+      return () => {
+        window.removeEventListener('resize', handleReducedResize)
+      }
+    }
+
     window.addEventListener('resize', resize, { passive: true })
     window.addEventListener('mousemove', handleMouseMove, { passive: true })
     document.documentElement.addEventListener('mouseleave', handleMouseLeave)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
     animationFrame = window.requestAnimationFrame(render)
 
     return () => {
@@ -156,6 +179,7 @@ export default function ParticleAtmosphere({ className = '' }) {
       window.removeEventListener('resize', resize)
       window.removeEventListener('mousemove', handleMouseMove)
       document.documentElement.removeEventListener('mouseleave', handleMouseLeave)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [])
 

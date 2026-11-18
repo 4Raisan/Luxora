@@ -161,15 +161,18 @@ const Plans = () => {
         </div>
 
         {/* Category Tabs */}
-        <div className="plans__tabs" data-reveal>
+        <div className="plans__tabs" role="tablist" aria-label="Service plan categories" data-reveal>
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
+              type="button"
+              role="tab"
+              aria-selected={activeCategory === cat.id}
               id={`plans-tab-${cat.id}`}
               className={`plans__tab ${activeCategory === cat.id ? 'plans__tab--active' : ''}`}
               onClick={() => setActiveCategory(cat.id)}
             >
-              <span className="plans__tab-icon">{cat.icon}</span>
+              <span className="plans__tab-icon" aria-hidden="true">{cat.icon}</span>
               {cat.label}
             </button>
           ))}
