@@ -194,7 +194,7 @@
     max-width: 94%;
   }
 
-  .lx-chat-input-bar {
+  .lx-chat-input-area {
     padding-bottom: max(12px, env(safe-area-inset-bottom));
     padding-left: 12px;
     padding-right: 12px;
@@ -211,9 +211,7 @@
   }
 
   /* Single-column vertical stacking for mobile friendliness */
-  .category-action-pills,
-  .action-buttons-list,
-  .quick-actions-grid,
+  .in-chat-actions,
   .escalation-channels-grid {
     display: flex !important;
     flex-direction: column !important;
@@ -221,27 +219,26 @@
     gap: 8px !important;
   }
 
-  .action-btn,
+  .in-chat-actions button,
   .channel-btn,
-  .quick-action-card,
-  .chip-option {
+  .lx-quick-pill {
     width: 100% !important;
     min-height: 44px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: flex-start !important;
-    padding: 12px 14px !important;
-    font-size: 0.88rem !important;
+    padding: 10px 14px !important;
+    font-size: 0.84rem !important;
     box-sizing: border-box !important;
   }
 
   /* Stepper mobile touch targets */
-  .stepper-control {
+  .stepper-control-row {
     gap: 14px !important;
     justify-content: center !important;
   }
 
-  .stepper-btn {
+  .stepper-btn-large {
     min-width: 44px !important;
     min-height: 44px !important;
     font-size: 20px !important;
@@ -251,15 +248,15 @@
     touch-action: manipulation;
   }
 
-  .stepper-count {
+  .stepper-display-value {
     font-size: 1.25rem !important;
     min-width: 40px !important;
   }
 
-  /* Special Ask Form inputs on mobile */
-  .special-ask-form input,
-  .special-ask-form textarea,
-  .special-ask-form select {
+  /* In-chat Form inputs on mobile */
+  .in-chat-widget input,
+  .in-chat-widget textarea,
+  .in-chat-widget select {
     font-size: 16px !important; /* Prevents iOS focus zoom */
     min-height: 42px !important;
   }
@@ -367,6 +364,19 @@
   flex-direction: column;
   gap: 16px;
   scroll-behavior: smooth;
+}
+
+@supports (scrollbar-color: auto) {
+  .lx-chat-messages {
+    scrollbar-color: rgba(201, 168, 76, 0.35) transparent;
+    scrollbar-width: thin;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lx-chat-messages {
+    scroll-behavior: auto;
+  }
 }
 
 .lx-chat-messages::-webkit-scrollbar {

@@ -25,9 +25,19 @@ export function ChatWindow({
   const [inputText, setInputText] = useState('')
   const [position, setPosition] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 640)
   const isDraggingRef = useRef(false)
   const dragStartRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0 })
   const windowRef = useRef(null)
+
+  useEffect(() => {
+    if (!isOpen) return undefined
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') onClose?.()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [isOpen, onClose])
 
   // Initialize desktop position from localStorage or default to bottom-right
   useEffect(() => {
@@ -53,10 +63,13 @@ export function ChatWindow({
     setPosition({ x: initX, y: initY })
   }, [])
 
-  // Auto-clamp position when window is resized
+  // Auto-clamp position and track breakpoint when window is resized
   useEffect(() => {
     const handleResize = () => {
-      if (typeof window === 'undefined' || window.innerWidth <= 640) return
+      if (typeof window === 'undefined') return
+      const mobile = window.innerWidth <= 640
+      setIsMobile(mobile)
+      if (mobile) return
       setPosition((prev) => {
         if (!prev || !windowRef.current) return prev
         const rect = windowRef.current.getBoundingClientRect()
@@ -143,7 +156,7 @@ export function ChatWindow({
     setInputText('')
   }
 
-  const isDesktop = typeof window !== 'undefined' && window.innerWidth > 640
+  const isDesktop = !isMobile
   const style = position && isDesktop
     ? {
         left: `${position.x}px`,
@@ -159,6 +172,7 @@ export function ChatWindow({
       className={`lx-chat-window lx-anim-slide-up ${isDragging ? 'lx-chat-window--dragging' : ''}`}
       style={style}
       role="dialog"
+      aria-modal={isMobile ? 'true' : undefined}
       aria-label="Luxora AI Concierge"
     >
       <ChatHeader
@@ -195,7 +209,8 @@ export function ChatWindow({
           <input
             type="text"
             className="lx-chat-input"
-            placeholder="Inquire about packages, bookings, services…"
+            aria-label="Message Luxora AI Concierge"
+            placeholder="Ask about packages, bookings…"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
           />

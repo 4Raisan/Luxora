@@ -176,7 +176,8 @@ export function LuxoraChatbot() {
           sessionStorage.setItem('pendingBespokeRequest', JSON.stringify(btn.requestData))
         }
         const token = sessionStorage.getItem('token')
-        const user = JSON.parse(sessionStorage.getItem('user') || '{}')
+        let user = {}
+        try { user = JSON.parse(sessionStorage.getItem('user') || '{}') } catch { user = {} }
         if (!token || user?.role?.toLowerCase() !== 'customer') {
           sessionStorage.setItem('loginRedirect', '/customer-dashboard?openBespoke=true')
           window.location.href = '/login?role=customer'
@@ -216,7 +217,8 @@ export function LuxoraChatbot() {
         sessionStorage.setItem('loginRedirect', '/customer-dashboard?bookSession=1')
 
         const token = sessionStorage.getItem('token')
-        const user = JSON.parse(sessionStorage.getItem('user') || '{}')
+        let user = {}
+        try { user = JSON.parse(sessionStorage.getItem('user') || '{}') } catch { user = {} }
         if (!token || user?.role?.toLowerCase() !== 'customer') {
           window.location.href = '/login?role=customer'
         } else {
@@ -240,7 +242,8 @@ export function LuxoraChatbot() {
       case 'VIEW_DASHBOARD':
       case 'CHECK_BALANCE': {
         const token = sessionStorage.getItem('token')
-        const user = JSON.parse(sessionStorage.getItem('user') || '{}')
+        let user = {}
+        try { user = JSON.parse(sessionStorage.getItem('user') || '{}') } catch { user = {} }
         if (!token || user?.role?.toLowerCase() !== 'customer') {
           sessionStorage.setItem('loginRedirect', '/customer-dashboard')
           window.location.href = '/login?role=customer'
@@ -279,7 +282,8 @@ export function LuxoraChatbot() {
     sessionStorage.setItem('loginRedirect', '/customer-dashboard?bookSession=1')
 
     const token = sessionStorage.getItem('token')
-    const user = JSON.parse(sessionStorage.getItem('user') || '{}')
+    let user = {}
+    try { user = JSON.parse(sessionStorage.getItem('user') || '{}') } catch { user = {} }
     if (!token || user?.role?.toLowerCase() !== 'customer') {
       window.location.href = '/login?role=customer'
     } else {

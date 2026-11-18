@@ -50,7 +50,12 @@ export function PackageCard({ pkg, onSelect }) {
           sessionStorage.setItem('loginRedirect', '/customer-dashboard?bookSession=1')
 
           const token = sessionStorage.getItem('token')
-          const user = JSON.parse(sessionStorage.getItem('user') || '{}')
+          let user = {}
+          try {
+            user = JSON.parse(sessionStorage.getItem('user') || '{}')
+          } catch {
+            user = {}
+          }
           if (!token || user?.role?.toLowerCase() !== 'customer') {
             window.location.href = '/login?role=customer'
           } else {

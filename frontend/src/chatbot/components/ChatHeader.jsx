@@ -34,6 +34,7 @@ export function ChatHeader({
       <div className="lx-chat-header__actions">
         {onReset && (
           <button
+            type="button"
             className="lx-chat-header__btn"
             onClick={onReset}
             aria-label="New Conversation"
@@ -47,6 +48,7 @@ export function ChatHeader({
         )}
         {onMinimize && (
           <button
+            type="button"
             className="lx-chat-header__btn"
             onClick={onMinimize}
             aria-label="Minimize Chat"
@@ -58,6 +60,7 @@ export function ChatHeader({
           </button>
         )}
         <button
+          type="button"
           className="lx-chat-header__btn"
           onClick={onClose}
           aria-label="Close Chat"

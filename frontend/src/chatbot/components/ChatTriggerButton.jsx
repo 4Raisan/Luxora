@@ -1,51 +1,75 @@
 import React, { useState, useEffect, useRef } from 'react'
 
-const STORAGE_KEY = 'lx_chatbot_btn_pos_v2'
+const STORAGE_KEY = 'lx_chatbot_btn_pos_v3'
 const MARGIN = 16
+const MIN_TOP = 76
+const BOTTOM_OFFSET = 24
+
+const clampPos = (x, y, width, height) => {
+  const maxX = Math.max(MARGIN, window.innerWidth - width - MARGIN)
+  const minY = Math.min(MIN_TOP, Math.max(MARGIN, window.innerHeight - height - BOTTOM_OFFSET))
+  const maxY = Math.max(minY, window.innerHeight - height - MARGIN)
+  return {
+    x: Math.min(Math.max(MARGIN, x), maxX),
+    y: Math.min(Math.max(minY, y), maxY),
+  }
+}
 
 export function ChatTriggerButton({ onClick, isOpen }) {
   const [position, setPosition] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
   const isDraggingRef = useRef(false)
+  const suppressClickRef = useRef(false)
+  const hasCustomPosRef = useRef(false)
+  const ratioRef = useRef({ rx: 1, ry: 1 })
   const dragStartRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0, moved: false })
   const buttonRef = useRef(null)
 
-  // Initialize position from localStorage or default to bottom-right
-  useEffect(() => {
-    const rect = buttonRef.current?.getBoundingClientRect()
+  const getBounds = (rect) => {
     const width = rect?.width || 150
     const height = rect?.height || 46
-    let initX = Math.max(MARGIN, window.innerWidth - width - MARGIN)
-    let initY = Math.max(MARGIN, window.innerHeight - height - 24)
+    const maxX = Math.max(MARGIN, window.innerWidth - width - MARGIN)
+    const minY = Math.min(MIN_TOP, Math.max(MARGIN, window.innerHeight - height - BOTTOM_OFFSET))
+    const maxY = Math.max(minY, window.innerHeight - height - MARGIN)
+    return { width, height, minX: MARGIN, maxX, minY, maxY }
+  }
 
+  // Initialize from saved drag ratio or keep anchored bottom-right
+  useEffect(() => {
+    const rect = buttonRef.current?.getBoundingClientRect()
+    const { width, height, minX, maxX, minY, maxY } = getBounds(rect)
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
-        if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
-          initX = Math.min(Math.max(MARGIN, parsed.x), Math.max(MARGIN, window.innerWidth - width - MARGIN))
-          initY = Math.min(Math.max(MARGIN, parsed.y), Math.max(MARGIN, window.innerHeight - height - MARGIN))
+        if (typeof parsed.rx === 'number' && typeof parsed.ry === 'number') {
+          hasCustomPosRef.current = true
+          ratioRef.current = { rx: parsed.rx, ry: parsed.ry }
+          const x = minX + Math.min(1, Math.max(0, parsed.rx)) * Math.max(0, maxX - minX)
+          const y = minY + Math.min(1, Math.max(0, parsed.ry)) * Math.max(0, maxY - minY)
+          setPosition({ x, y })
+          return
         }
       } catch {
-        // Use default
+        // Fall through to bottom-right default
       }
     }
-    setPosition({ x: initX, y: initY })
+    setPosition(clampPos(window.innerWidth - width - MARGIN, window.innerHeight - height - BOTTOM_OFFSET, width, height))
   }, [])
 
-  // Auto-clamp position when window is resized or mobile device is rotated
+  // Keep bottom-right default or restore proportional custom corner on viewport resize
   useEffect(() => {
     const handleResize = () => {
-      setPosition((prev) => {
-        if (!prev || !buttonRef.current) return prev
-        const rect = buttonRef.current.getBoundingClientRect()
-        const maxX = Math.max(MARGIN, window.innerWidth - rect.width - MARGIN)
-        const maxY = Math.max(MARGIN, window.innerHeight - rect.height - MARGIN)
-        const clampedX = Math.min(Math.max(MARGIN, prev.x), maxX)
-        const clampedY = Math.min(Math.max(MARGIN, prev.y), maxY)
-        if (clampedX === prev.x && clampedY === prev.y) return prev
-        return { x: clampedX, y: clampedY }
-      })
+      if (!buttonRef.current) return
+      const rect = buttonRef.current.getBoundingClientRect()
+      const { width, height, minX, maxX, minY, maxY } = getBounds(rect)
+      if (!hasCustomPosRef.current) {
+        setPosition(clampPos(window.innerWidth - width - MARGIN, window.innerHeight - height - BOTTOM_OFFSET, width, height))
+        return
+      }
+      const x = minX + ratioRef.current.rx * Math.max(0, maxX - minX)
+      const y = minY + ratioRef.current.ry * Math.max(0, maxY - minY)
+      setPosition({ x, y })
     }
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
@@ -84,12 +108,14 @@ export function ChatTriggerButton({ onClick, isOpen }) {
 
     if (isDraggingRef.current && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect()
-      const maxX = Math.max(MARGIN, window.innerWidth - rect.width - MARGIN)
-      const maxY = Math.max(MARGIN, window.innerHeight - rect.height - MARGIN)
-      const newX = Math.min(Math.max(MARGIN, dragStartRef.current.initialX + dx), maxX)
-      const newY = Math.min(Math.max(MARGIN, dragStartRef.current.initialY + dy), maxY)
-
-      setPosition({ x: newX, y: newY })
+      const { width, height, minX, maxX, minY, maxY } = getBounds(rect)
+      const next = clampPos(dragStartRef.current.initialX + dx, dragStartRef.current.initialY + dy, width, height)
+      hasCustomPosRef.current = true
+      ratioRef.current = {
+        rx: maxX > minX ? (next.x - minX) / (maxX - minX) : 1,
+        ry: maxY > minY ? (next.y - minY) / (maxY - minY) : 1,
+      }
+      setPosition(next)
     }
   }
 
@@ -105,11 +131,9 @@ export function ChatTriggerButton({ onClick, isOpen }) {
     isDraggingRef.current = false
 
     if (wasDragging) {
-      if (position) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(position))
-      }
-    } else if (!dragStartRef.current.moved) {
-      onClick?.()
+      suppressClickRef.current = true
+      setTimeout(() => { suppressClickRef.current = false }, 50)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(ratioRef.current))
     }
 
     dragStartRef.current = { startX: 0, startY: 0, initialX: 0, initialY: 0, moved: false }
@@ -119,6 +143,15 @@ export function ChatTriggerButton({ onClick, isOpen }) {
     setIsDragging(false)
     isDraggingRef.current = false
     dragStartRef.current = { startX: 0, startY: 0, initialX: 0, initialY: 0, moved: false }
+  }
+
+  const handleClick = (e) => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false
+      e.preventDefault()
+      return
+    }
+    onClick?.()
   }
 
   if (isOpen) return null
@@ -141,9 +174,11 @@ export function ChatTriggerButton({ onClick, isOpen }) {
 
   return (
     <button
+      type="button"
       ref={buttonRef}
       className={`lx-chat-trigger lx-pulse-gold ${isDragging ? 'lx-chat-trigger--dragging' : ''}`}
       style={style}
+      onClick={handleClick}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

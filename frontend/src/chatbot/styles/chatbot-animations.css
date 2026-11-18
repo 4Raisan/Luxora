@@ -69,3 +69,13 @@
 .lx-anim-sparkle {
   animation: lxSparkleTwinkle 3.2s ease-in-out infinite;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .lx-pulse-gold,
+  .lx-anim-slide-up,
+  .lx-anim-msg-in,
+  .lx-anim-sparkle,
+  .lx-typing-dot {
+    animation: none !important;
+  }
+}

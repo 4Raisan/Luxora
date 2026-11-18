@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useId, useState } from 'react'
+import { colomboToday } from '../../utils/colomboTime'
 
 export function InlineComponent({ comp, onSendPayload, onSendMessage }) {
   if (!comp || !comp.type) return null
@@ -159,7 +160,12 @@ function RecommendationCardsWidget({ comp }) {
     sessionStorage.setItem('loginRedirect', '/customer-dashboard?bookSession=1')
 
     const token = sessionStorage.getItem('token')
-    const user = JSON.parse(sessionStorage.getItem('user') || '{}')
+    let user = {}
+    try {
+      user = JSON.parse(sessionStorage.getItem('user') || '{}')
+    } catch {
+      user = {}
+    }
     if (!token || user?.role?.toLowerCase() !== 'customer') {
       window.location.href = '/login?role=customer'
     } else {
@@ -220,13 +226,14 @@ function SpecialAskFormWidget({ comp, onSendPayload }) {
     'Pet Care'
   ]
 
+  const fieldPrefix = useId()
   const [title, setTitle] = useState(comp.title || '')
   const [category, setCategory] = useState(comp.category || 'Auto Care')
   const [date, setDate] = useState(comp.date || '')
   const [notes, setNotes] = useState(comp.notes || '')
   const [validationError, setValidationError] = useState(comp.error || '')
 
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = colomboToday()
 
   const handleSubmit = (e) => {
     e?.preventDefault?.()
@@ -275,10 +282,11 @@ function SpecialAskFormWidget({ comp, onSendPayload }) {
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <div>
-          <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--lx-chat-gold)', fontWeight: 700, marginBottom: '3px' }}>
+          <label htmlFor={`${fieldPrefix}-title`} style={{ display: 'block', fontSize: '0.72rem', color: 'var(--lx-chat-gold)', fontWeight: 700, marginBottom: '3px' }}>
             1. SERVICE SUBJECT / TITLE *
           </label>
           <input
+            id={`${fieldPrefix}-title`}
             className="form-input"
             required
             placeholder="e.g. Villa Marble Floor Polishing & Restoration"
@@ -288,10 +296,11 @@ function SpecialAskFormWidget({ comp, onSendPayload }) {
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--lx-chat-gold)', fontWeight: 700, marginBottom: '3px' }}>
+          <label htmlFor={`${fieldPrefix}-category`} style={{ display: 'block', fontSize: '0.72rem', color: 'var(--lx-chat-gold)', fontWeight: 700, marginBottom: '3px' }}>
             2. CATEGORY *
           </label>
           <select
+            id={`${fieldPrefix}-category`}
             className="form-input"
             value={category}
             onChange={(e) => { setCategory(e.target.value); setValidationError('') }}
@@ -306,10 +315,11 @@ function SpecialAskFormWidget({ comp, onSendPayload }) {
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--lx-chat-gold)', fontWeight: 700, marginBottom: '3px' }}>
+          <label htmlFor={`${fieldPrefix}-date`} style={{ display: 'block', fontSize: '0.72rem', color: 'var(--lx-chat-gold)', fontWeight: 700, marginBottom: '3px' }}>
             3. PREFERRED DATE *
           </label>
           <input
+            id={`${fieldPrefix}-date`}
             type="date"
             className="form-input"
             required
@@ -320,10 +330,11 @@ function SpecialAskFormWidget({ comp, onSendPayload }) {
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--lx-chat-gold)', fontWeight: 700, marginBottom: '3px' }}>
+          <label htmlFor={`${fieldPrefix}-notes`} style={{ display: 'block', fontSize: '0.72rem', color: 'var(--lx-chat-gold)', fontWeight: 700, marginBottom: '3px' }}>
             4. SPECIAL REQUIREMENTS & DETAILS *
           </label>
           <textarea
+            id={`${fieldPrefix}-notes`}
             className="inline-text-area"
             required
             rows="3"
@@ -356,7 +367,12 @@ function SummaryCardWidget({ comp, onSendPayload }) {
 
     // 2. Check login status
     const token = sessionStorage.getItem('token')
-    const user = JSON.parse(sessionStorage.getItem('user') || '{}')
+    let user = {}
+    try {
+      user = JSON.parse(sessionStorage.getItem('user') || '{}')
+    } catch {
+      user = {}
+    }
     const isCustomer = token && user?.role?.toLowerCase() === 'customer'
 
     if (isCustomer) {
@@ -435,8 +451,9 @@ function EscalationWidget({ comp, onSendMessage }) {
 
       <div className="escalation-channels-grid">
         {channels.map((ch, idx) => (
-          <div
-            key={idx}
+          <button
+            type="button"
+            key={ch.id || idx}
             className="channel-btn"
             onClick={() =>
               onSendMessage(`Selected: ${ch.label}. Please connect me with your team.`)
@@ -444,7 +461,7 @@ function EscalationWidget({ comp, onSendMessage }) {
           >
             <div className="channel-title">{ch.label}</div>
             <div className="channel-desc">{ch.desc}</div>
-          </div>
+          </button>
         ))}
       </div>
     </div>
