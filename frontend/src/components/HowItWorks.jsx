@@ -6,11 +6,8 @@ import './HowItWorks.css'
 
 const MOTION = {
   desktopPerspective: 1400,
-  desktopDepth: 125,
-  mobileDepth: 48,
-  desktopStagger: 0.13,
-  mobileStagger: 0.48,
-  edgeRotation: 92,
+  desktopStagger: 0.08,
+  mobileStagger: 0.08,
   finalRotation: 180,
 }
 
@@ -56,7 +53,7 @@ const steps = [
 export const Card = ({ step }) => (
   <article className="journey-card" aria-label={`${step.number}. ${step.backTitle}`}>
     <div className="journey-card__face journey-card__face--front" aria-hidden="true">
-      <img className="journey-card__artwork" src="/luxora-journey-card.webp" alt="" draggable="false" decoding="async" />
+      <img className="journey-card__artwork" src="/luxora-journey-card.webp" alt="" width="500" height="680" draggable="false" decoding="async" />
     </div>
 
     <div className="journey-card__face journey-card__face--back" aria-hidden="true">
@@ -87,19 +84,18 @@ export const CardSection = () => {
 
     const context = gsap.context(() => {
       const cards = gsap.utils.toArray('.journey-card', section)
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        gsap.set(cards, { clearProps: 'transform' })
-        return undefined
-      }
+      const pathLine = section.querySelector('.how-it-works__journey-path')
+      const glowLine = section.querySelector('.how-it-works__journey-glow')
 
       const media = gsap.matchMedia()
+      media.add('(prefers-reduced-motion: reduce)', () => {
+        gsap.set(cards, { clearProps: 'all' })
+      })
 
-      const buildTimeline = ({ mobile }) => {
-        const depth = mobile ? MOTION.mobileDepth : MOTION.desktopDepth
-        const stagger = mobile ? MOTION.mobileStagger : MOTION.desktopStagger
-
+      const buildDesktopTimeline = () => {
         gsap.set(cards, {
           force3D: true,
+          opacity: 1,
           rotationX: 0,
           rotationY: 0,
           scale: 1,
@@ -109,46 +105,84 @@ export const CardSection = () => {
           z: 0,
         })
 
-        const timeline = gsap.timeline({
-          defaults: { ease: 'power2.inOut' },
-          paused: true,
+        const paths = [pathLine, glowLine].filter(Boolean)
+        paths.forEach((p) => {
+          const len = typeof p.getTotalLength === 'function' ? p.getTotalLength() : 1400
+          gsap.set(p, { strokeDasharray: len, strokeDashoffset: len })
         })
 
-        // Mobile keeps the card flip animation only. The strip itself is a
-        // native swipe surface (overflow-x + scroll-snap on the stage), so
-        // cards stay reachable without depending on a one-shot auto-pan
-        // whose final position could clip or strand cards.
+        const timeline = gsap.timeline({ paused: true })
 
-        cards.forEach((card, index) => {
-          const direction = index % 2 === 0 ? 1 : -1
-          const start = index * stagger
-          timeline
-            .to(card, {
-              duration: 0.72,
-              rotationX: direction * (mobile ? 2.5 : 5),
-              rotationY: direction * MOTION.edgeRotation,
-              scale: mobile ? 0.975 : 0.95,
-              x: direction * (mobile ? 10 : 26),
-              y: index % 2 === 0 ? -10 : 12,
-              z: depth + index * (mobile ? 4 : 12),
-            }, start)
-            .to(card, {
-              duration: 0.82,
-              rotationX: 0,
-              rotationY: direction * MOTION.finalRotation,
-              scale: 1,
-              x: 0,
-              y: 0,
-              z: mobile ? 0 : (index % 2 === 0 ? -8 : 14),
-            }, start + 0.72)
-        })
+        if (paths.length) {
+          timeline.to(paths, { duration: 0.95, strokeDashoffset: 0, ease: 'power2.out' }, 0)
+        }
 
-        const trigger = ScrollTrigger.create({
-          trigger: section,
-          start: 'top 65%',
+        timeline.to(
+          cards,
+          {
+            duration: 0.8,
+            rotationY: MOTION.finalRotation,
+            stagger: MOTION.desktopStagger,
+            ease: 'power2.inOut',
+            overwrite: 'auto',
+          },
+          0
+        )
+
+        const playTrigger = ScrollTrigger.create({
+          trigger: track,
+          start: 'top 82%',
+          end: 'bottom 18%',
           onEnter: () => timeline.play(),
           onEnterBack: () => timeline.play(),
-          onLeaveBack: () => timeline.reverse(),
+        })
+
+        const resetTrigger = ScrollTrigger.create({
+          trigger: track,
+          start: 'top bottom',
+          end: 'bottom top',
+          onLeave: () => timeline.pause(0),
+          onLeaveBack: () => timeline.pause(0),
+        })
+
+        return () => {
+          playTrigger.kill()
+          resetTrigger.kill()
+          timeline.kill()
+        }
+      }
+
+      const buildMobileTimeline = () => {
+        gsap.set(cards, { clearProps: 'transform' })
+        gsap.set(cards, { opacity: 0, y: 20 })
+
+        const paths = [pathLine, glowLine].filter(Boolean)
+        paths.forEach((p) => {
+          const len = typeof p.getTotalLength === 'function' ? p.getTotalLength() : 1400
+          gsap.set(p, { strokeDasharray: len, strokeDashoffset: len })
+        })
+
+        const timeline = gsap.timeline({ paused: true })
+        if (paths.length) {
+          timeline.to(paths, { duration: 1.0, strokeDashoffset: 0, ease: 'power2.out' }, 0)
+        }
+        timeline.to(
+          cards,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.55,
+            ease: 'power3.out',
+            stagger: MOTION.mobileStagger,
+          },
+          0.1
+        )
+
+        const trigger = ScrollTrigger.create({
+          trigger: track,
+          start: 'top 85%',
+          once: true,
+          onEnter: () => timeline.play(),
         })
 
         return () => {
@@ -157,8 +191,8 @@ export const CardSection = () => {
         }
       }
 
-      media.add('(min-width: 769px)', () => buildTimeline({ mobile: false }))
-      media.add('(max-width: 768px)', () => buildTimeline({ mobile: true }))
+      media.add('(min-width: 769px) and (prefers-reduced-motion: no-preference)', buildDesktopTimeline)
+      media.add('(max-width: 768px) and (prefers-reduced-motion: no-preference)', buildMobileTimeline)
       return () => media.revert()
     }, section)
 
@@ -168,6 +202,7 @@ export const CardSection = () => {
   return (
     <section ref={sectionRef} className="how-it-works" aria-labelledby="how-it-works-title" style={{ '--journey-perspective': `${MOTION.desktopPerspective}px` }}>
       <div className="how-it-works__inner">
+        <span className="section-label how-it-works__eyebrow" data-reveal>06 // THE CARE PROTOCOL</span>
         <h2 id="how-it-works-title" className="how-it-works__title" data-reveal>Your Seamless <em>Care Journey</em></h2>
         <p className="how-it-works__intro" data-reveal>From choosing a service to verified completion, every step is designed around your time and peace of mind.</p>
 
@@ -178,9 +213,6 @@ export const CardSection = () => {
                 <stop offset="0" stopColor="#b9964a" /><stop offset="0.32" stopColor="#f4dfaa" />
                 <stop offset="0.67" stopColor="#c8a458" /><stop offset="1" stopColor="#edd59b" />
               </linearGradient>
-              <filter id="journey-glow" x="-10%" y="-100%" width="120%" height="300%">
-                <feGaussianBlur stdDeviation="4" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-              </filter>
             </defs>
             <path className="how-it-works__journey-glow" d="M 8 76 C 245 13, 510 28, 720 62 S 1012 108, 1192 46" />
             <path className="how-it-works__journey-path" d="M 8 76 C 245 13, 510 28, 720 62 S 1012 108, 1192 46" />
