@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate, Link } from 'react-router-dom'
 import { apiRequest } from '../services/api'
 import { ActionButton } from '../components/ui'
@@ -5044,14 +5045,15 @@ const CustomerDashboard = () => {
       )}
 
       {/* ── Booking Checkout Confirmation Modal ── */}
-      {selectedPackageToBook && (
-        <div className="cd-support-overlay" onClick={() => setSelectedPackageToBook(null)}>
-          <div className="cd-support-modal animate-fade-in" role="dialog" aria-modal="true" aria-label="Confirm package booking" onClick={(e) => e.stopPropagation()}>
+      {selectedPackageToBook && createPortal(
+        <div className="cd-support-overlay cd-checkout-overlay" onClick={() => setSelectedPackageToBook(null)}>
+          <div className="cd-support-modal cd-checkout-modal" role="dialog" aria-modal="true" aria-labelledby="cd-checkout-title" onClick={(e) => e.stopPropagation()}>
             <div className="cd-support-modal__header">
-              <div className="cd-support-icon-box"><ShieldIcon /></div>
-              <h2 className="cd-support-modal__title">Confirm Package Booking</h2>
-              <p className="cd-support-modal__subtitle">Add {selectedPackageToBook.title} to your active subscriptions</p>
+              <h2 id="cd-checkout-title" className="cd-support-modal__title">Confirm package booking</h2>
+              <p className="cd-support-modal__subtitle">{selectedPackageToBook.title} · {selectedPackageToBook.tier}</p>
               <button
+                type="button"
+                autoFocus
                 className="cd-support-modal__close"
                 onClick={() => setSelectedPackageToBook(null)}
                 aria-label="Close Modal"
@@ -5060,168 +5062,159 @@ const CustomerDashboard = () => {
               </button>
             </div>
 
-            {/* Interactive Billing Type Selector */}
-            <div className="cd-billing-option-selector">
-              <div className="cd-billing-selector-label">SELECT BILLING TYPE:</div>
-              <div className="cd-billing-option-grid">
-                <div
-                  className={`cd-billing-option-card ${bookingBillingType === 'auto_renew' ? 'active' : ''}`}
-                  onClick={() => setBookingBillingType('auto_renew')}
-                  onKeyDown={(e) => activateOnKey(e, () => setBookingBillingType('auto_renew'))}
-                  role="button"
-                  tabIndex={0}
-                  aria-pressed={bookingBillingType === 'auto_renew'}
-                >
-                  <div className="cd-billing-option-radio">
-                    <span className={`cd-radio-circle ${bookingBillingType === 'auto_renew' ? 'selected' : ''}`} />
-                  </div>
-                  <div className="cd-billing-option-info">
-                    <strong>🔄 Auto-Renewal (Monthly)</strong>
-                    <p>Renews every 30 days automatically ({getRenewalDate(null)}). Cancel anytime.</p>
-                  </div>
-                </div>
-
-                <div
-                  className={`cd-billing-option-card ${bookingBillingType === 'one_time' ? 'active' : ''}`}
-                  onClick={() => setBookingBillingType('one_time')}
-                  onKeyDown={(e) => activateOnKey(e, () => setBookingBillingType('one_time'))}
-                  role="button"
-                  tabIndex={0}
-                  aria-pressed={bookingBillingType === 'one_time'}
-                >
-                  <div className="cd-billing-option-radio">
-                    <span className={`cd-radio-circle ${bookingBillingType === 'one_time' ? 'selected' : ''}`} />
-                  </div>
-                  <div className="cd-billing-option-info">
-                    <strong>⚡ One-Time Pass (30 Days)</strong>
-                    <p>Single 30-day service pass. Automatically expires on {getRenewalDate(null)} with no recurring charges.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="cd-book-confirm-details" style={{ marginTop: '1rem' }}>
-              <div className="cd-book-confirm-row">
-                <span>Selected Package:</span>
-                <strong>{selectedPackageToBook.title}</strong>
-              </div>
-              <div className="cd-book-confirm-row">
-                <span>Subscription Tier:</span>
-                <span className="gold-accent">{selectedPackageToBook.tier}</span>
-              </div>
-              <div className="cd-book-confirm-row">
-                <span>Selected Billing Option:</span>
-                <span className="gold-accent" style={{ fontWeight: '700' }}>
-                  {bookingBillingType === 'auto_renew' ? '🔄 Monthly Auto-Renewal' : '⚡ One-Time Pass (30 Days)'}
-                </span>
-              </div>
-              <div className="cd-book-confirm-row">
-                <span>Price:</span>
-                <strong className="cd-confirm-price">
-                  {selectedPackageToBook.promotion && <del style={{ color: '#888', fontSize: '0.82rem', marginRight: '0.45rem' }}>LKR {Number(selectedPackageToBook.originalPrice).toLocaleString()}</del>}
-                  {selectedPackageToBook.price} {bookingBillingType === 'one_time' ? '/ 30 days' : '/ month'}
-                </strong>
-              </div>
-              {selectedPackageToBook.promotion && <div className="cd-book-confirm-row">
-                <span>Package discount:</span>
-                <small style={{ color: '#7ed49b' }}>{selectedPackageToBook.promotion.code ? `${selectedPackageToBook.promotion.code} · ` : ''}{selectedPackageToBook.promotion.discountPct}% applied at checkout</small>
-              </div>}
-              <div className="cd-book-confirm-row">
-                <span>Delivery Address:</span>
-                <small>{formatAddress(userAddress)}</small>
-              </div>
-              <div className="cd-book-confirm-row">
-                <span>{bookingBillingType === 'auto_renew' ? 'Next Renewal Date:' : 'Expiry Date:'}</span>
-                <small className="gold-accent">{getRenewalDate(null)}</small>
-              </div>
-            </div>
-
-            <div className="cd-support-actions" style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div className="cd-easypay" style={{ borderColor: 'rgba(95, 189, 139, 0.35)' }}>
-                <div className="cd-easypay__head">
-                  <span className="cd-easypay__title">DEMO PAYMENT</span>
-                  <span className="cd-easypay__badge" style={{ background: 'rgba(95, 189, 139, 0.15)', color: '#5FBD8B' }}>DEMO — NO REAL CHARGE</span>
-                </div>
-                <ActionButton
-                  type="button"
-                  className="cd-support-send-btn"
-                  loading={paymentBusy}
-                  loadingText="Processing demo payment..."
-                  disabled={paymentBusy || !paymentGateways.demo?.enabled}
-                  onClick={handleDemoCheckout}
-                >
-                  Demo Pay
-                </ActionButton>
-                <small style={{ display: 'block', marginTop: '0.4rem', color: '#888', fontSize: '0.72rem' }}>
-                  {paymentGateways.demo?.enabled
-                    ? 'Activate the selected package and add service coins without a financial charge.'
-                    : 'Demo payments are disabled on this backend.'}
-                </small>
-              </div>
-
-              {/* PayHere */}
-              <div className="cd-easypay">
-                <div className="cd-easypay__head">
-                  <span className="cd-easypay__title">CREDIT / DEBIT CARD</span>
-                  <span className="cd-easypay__badge">{payhereEnv === 'LIVE' ? 'PAYHERE LIVE' : 'PAYHERE SANDBOX'}</span>
-                </div>
-                <ActionButton
-                  type="button"
-                  className="cd-support-send-btn"
-                  loading={paymentBusy}
-                  loadingText="Preparing payment..."
-                  disabled={paymentBusy || !paymentGateways.payhere.enabled}
-                  onClick={() => startPayment('payhere', selectedPackageToBook)}
-                >
-                  {paymentGateways.payhere.enabled ? 'PAY WITH PAYHERE' : 'PAYHERE NOT CONFIGURED'}
-                </ActionButton>
-                <small style={{ display: 'block', marginTop: '0.4rem', color: '#888', fontSize: '0.72rem' }}>
-                  {paymentGateways.payhere.enabled
-                    ? `Redirects to PayHere ${payhereEnv === 'LIVE' ? '' : 'sandbox '}hosted checkout. Package activates automatically upon verified server callback.`
-                    : 'Configure PayHere credentials and public HTTPS callback URLs to enable this gateway.'}
-                </small>
-                {payhereEnv !== 'LIVE' && (
-                  <details className="cd-easypay__help" style={{ marginTop: '0.4rem' }}>
-                    <summary>Test card details (sandbox)</summary>
-                    <div className="cd-easypay__help-body">
-                      <p>Use PayHere's official sandbox test cards — no real money is charged:</p>
-                      <ul>
-                        <li><strong>Visa:</strong> 4916217501611292</li>
-                        <li><strong>Mastercard:</strong> 5484181001001004</li>
-                        <li><strong>American Express:</strong> 345678901234564</li>
-                      </ul>
-                      <p>Use any future expiry date (e.g. 12/28), any 3-digit CVV, and name <strong>Test User</strong>.</p>
+            <div className="cd-checkout-grid">
+              <div className="cd-checkout-summary">
+                <div className="cd-billing-option-selector">
+                  <div className="cd-billing-selector-label">SELECT BILLING TYPE:</div>
+                  <div className="cd-billing-option-grid">
+                    <div
+                      className={`cd-billing-option-card ${bookingBillingType === 'auto_renew' ? 'active' : ''}`}
+                      onClick={() => setBookingBillingType('auto_renew')}
+                      onKeyDown={(e) => activateOnKey(e, () => setBookingBillingType('auto_renew'))}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={bookingBillingType === 'auto_renew'}
+                    >
+                      <div className="cd-billing-option-radio">
+                        <span className={`cd-radio-circle ${bookingBillingType === 'auto_renew' ? 'selected' : ''}`} />
+                      </div>
+                      <div className="cd-billing-option-info">
+                        <strong>🔄 Auto-Renewal (Monthly)</strong>
+                        <p>Renews every 30 days. Cancel anytime.</p>
+                      </div>
                     </div>
-                  </details>
-                )}
+
+                    <div
+                      className={`cd-billing-option-card ${bookingBillingType === 'one_time' ? 'active' : ''}`}
+                      onClick={() => setBookingBillingType('one_time')}
+                      onKeyDown={(e) => activateOnKey(e, () => setBookingBillingType('one_time'))}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={bookingBillingType === 'one_time'}
+                    >
+                      <div className="cd-billing-option-radio">
+                        <span className={`cd-radio-circle ${bookingBillingType === 'one_time' ? 'selected' : ''}`} />
+                      </div>
+                      <div className="cd-billing-option-info">
+                        <strong>⚡ One-Time Pass (30 Days)</strong>
+                        <p>Ends after 30 days with no renewal.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="cd-book-confirm-details">
+                  <div className="cd-book-confirm-row">
+                    <span>Price:</span>
+                    <strong className="cd-confirm-price">
+                      {selectedPackageToBook.promotion && <del style={{ color: '#888', fontSize: '0.82rem', marginRight: '0.45rem' }}>LKR {Number(selectedPackageToBook.originalPrice).toLocaleString()}</del>}
+                      {selectedPackageToBook.price} {bookingBillingType === 'one_time' ? '/ 30 days' : '/ month'}
+                    </strong>
+                  </div>
+                  {selectedPackageToBook.promotion && <div className="cd-book-confirm-row">
+                    <span>Package discount:</span>
+                    <small style={{ color: '#7ed49b' }}>{selectedPackageToBook.promotion.code ? `${selectedPackageToBook.promotion.code} · ` : ''}{selectedPackageToBook.promotion.discountPct}% applied at checkout</small>
+                  </div>}
+                  <div className="cd-book-confirm-row">
+                    <span>Delivery Address:</span>
+                    <small>{formatAddress(userAddress)}</small>
+                  </div>
+                  <div className="cd-book-confirm-row">
+                    <span>{bookingBillingType === 'auto_renew' ? 'Next Renewal Date:' : 'Expiry Date:'}</span>
+                    <small className="gold-accent">{getRenewalDate(null)}</small>
+                  </div>
+                </div>
               </div>
 
-              {/* NOWPayments Crypto */}
-              <div className="cd-easypay" style={{ borderColor: 'rgba(212, 175, 55, 0.3)' }}>
-                <div className="cd-easypay__head">
-                  <span className="cd-easypay__title">CRYPTOCURRENCY</span>
-                  <span className="cd-easypay__badge" style={{ background: 'rgba(212, 175, 55, 0.15)', color: '#d4af37' }}>USDT-BSC / BTC / ETH</span>
+              <section className="cd-checkout-payments" aria-labelledby="cd-checkout-payment-title">
+                <h3 id="cd-checkout-payment-title">Payment method</h3>
+                <div className="cd-easypay" style={{ borderColor: 'rgba(95, 189, 139, 0.35)' }}>
+                  <div className="cd-easypay__head">
+                    <span className="cd-easypay__title">DEMO PAYMENT</span>
+                    <span className="cd-easypay__badge" style={{ background: 'rgba(95, 189, 139, 0.15)', color: '#5FBD8B' }}>DEMO — NO REAL CHARGE</span>
+                  </div>
+                  <ActionButton
+                    type="button"
+                    className="cd-support-send-btn"
+                    loading={paymentBusy}
+                    loadingText="Processing demo payment..."
+                    disabled={paymentBusy || !paymentGateways.demo?.enabled}
+                    onClick={handleDemoCheckout}
+                  >
+                    Demo Pay
+                  </ActionButton>
+                  <small style={{ display: 'block', marginTop: '0.4rem', color: '#888', fontSize: '0.72rem' }}>
+                    {paymentGateways.demo?.enabled
+                      ? 'Activates the package and adds service coins.'
+                      : 'Demo payments are disabled on this backend.'}
+                  </small>
                 </div>
-                <ActionButton
-                  type="button"
-                  className="cd-support-send-btn"
-                  style={{ background: 'linear-gradient(135deg, #d4af37 0%, #aa8010 100%)', color: '#000', fontWeight: 'bold' }}
-                  loading={paymentBusy}
-                  loadingText="Preparing payment..."
-                  disabled={paymentBusy || !paymentGateways.nowpayments.enabled}
-                  onClick={() => startPayment('nowpayments', selectedPackageToBook)}
-                >
-                  {paymentGateways.nowpayments.enabled ? 'PAY WITH CRYPTO (NOWPAYMENTS)' : 'NOWPAYMENTS NOT CONFIGURED'}
-                </ActionButton>
-                <small style={{ display: 'block', marginTop: '0.4rem', color: '#888', fontSize: '0.72rem' }}>
-                  {paymentGateways.nowpayments.enabled
-                    ? 'Live LKR to USD conversion with instant crypto invoice. Settles strictly after full blockchain finality.'
-                    : 'Configure the NOWPayments API key and IPN secret to enable this gateway.'}
-                </small>
-              </div>
+
+                {/* PayHere */}
+                <div className="cd-easypay">
+                  <div className="cd-easypay__head">
+                    <span className="cd-easypay__title">CREDIT / DEBIT CARD</span>
+                    <span className="cd-easypay__badge">{payhereEnv === 'LIVE' ? 'PAYHERE LIVE' : 'PAYHERE SANDBOX'}</span>
+                  </div>
+                  <ActionButton
+                    type="button"
+                    className="cd-support-send-btn"
+                    loading={paymentBusy}
+                    loadingText="Preparing payment..."
+                    disabled={paymentBusy || !paymentGateways.payhere.enabled}
+                    onClick={() => startPayment('payhere', selectedPackageToBook)}
+                  >
+                    {paymentGateways.payhere.enabled ? 'PAY WITH PAYHERE' : 'PAYHERE NOT CONFIGURED'}
+                  </ActionButton>
+                  <small style={{ display: 'block', marginTop: '0.4rem', color: '#888', fontSize: '0.72rem' }}>
+                    {paymentGateways.payhere.enabled
+                      ? `Continues to PayHere ${payhereEnv === 'LIVE' ? 'checkout' : 'sandbox checkout'}.`
+                      : 'Card payments are unavailable.'}
+                  </small>
+                  {payhereEnv !== 'LIVE' && (
+                    <details className="cd-easypay__help" style={{ marginTop: '0.4rem' }}>
+                      <summary>Test card details (sandbox)</summary>
+                      <div className="cd-easypay__help-body">
+                        <p>Use PayHere's official sandbox test cards — no real money is charged:</p>
+                        <ul>
+                          <li><strong>Visa:</strong> 4916217501611292</li>
+                          <li><strong>Mastercard:</strong> 5484181001001004</li>
+                          <li><strong>American Express:</strong> 345678901234564</li>
+                        </ul>
+                        <p>Use any future expiry date (e.g. 12/28), any 3-digit CVV, and name <strong>Test User</strong>.</p>
+                      </div>
+                    </details>
+                  )}
+                </div>
+
+                {/* NOWPayments Crypto */}
+                <div className="cd-easypay" style={{ borderColor: 'rgba(212, 175, 55, 0.3)' }}>
+                  <div className="cd-easypay__head">
+                    <span className="cd-easypay__title">CRYPTOCURRENCY</span>
+                    <span className="cd-easypay__badge" style={{ background: 'rgba(212, 175, 55, 0.15)', color: '#d4af37' }}>USDT-BSC / BTC / ETH</span>
+                  </div>
+                  <ActionButton
+                    type="button"
+                    className="cd-support-send-btn"
+                    style={{ background: 'linear-gradient(135deg, #d4af37 0%, #aa8010 100%)', color: '#000', fontWeight: 'bold' }}
+                    loading={paymentBusy}
+                    loadingText="Preparing payment..."
+                    disabled={paymentBusy || !paymentGateways.nowpayments.enabled}
+                    onClick={() => startPayment('nowpayments', selectedPackageToBook)}
+                  >
+                    {paymentGateways.nowpayments.enabled ? 'PAY WITH CRYPTO (NOWPAYMENTS)' : 'NOWPAYMENTS NOT CONFIGURED'}
+                  </ActionButton>
+                  <small style={{ display: 'block', marginTop: '0.4rem', color: '#888', fontSize: '0.72rem' }}>
+                    {paymentGateways.nowpayments.enabled
+                      ? 'Opens a crypto invoice. Activates after payment confirmation.'
+                      : 'Crypto payments are unavailable.'}
+                  </small>
+                </div>
+              </section>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* ── Membership Manage Popup (renewal + cancel for server subscriptions) ── */}
