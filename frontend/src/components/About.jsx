@@ -1,7 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import useScrollReveal from '../hooks/useScrollReveal'
 import './About.css'
 import './Footer.css'
+
+gsap.registerPlugin(ScrollTrigger)
 
 const About = () => {
   const sectionRef = useRef(null)
@@ -10,26 +14,80 @@ const About = () => {
 
   useEffect(() => {
     if (!showVisionModal) return undefined
-    const onKeyDown = (e) => { if (e.key === 'Escape') setShowVisionModal(false) }
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setShowVisionModal(false)
+    }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [showVisionModal])
 
+  useLayoutEffect(() => {
+    const section = sectionRef.current
+    if (!section) return undefined
+
+    const context = gsap.context(() => {
+      const media = gsap.matchMedia()
+      media.add('(min-width: 769px) and (prefers-reduced-motion: no-preference)', () => {
+        const img = section.querySelector('.about__editorial-img')
+        if (img) {
+          gsap.fromTo(
+            img,
+            { yPercent: -8, scale: 1.12 },
+            {
+              yPercent: 8,
+              scale: 1.04,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: '.about__editorial-frame',
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: true,
+              },
+            }
+          )
+        }
+      })
+      return () => media.revert()
+    }, section)
+
+    return () => context.revert()
+  }, [])
+
   const pillars = [
-    { icon: '◈', title: 'Discretion', desc: 'Your privacy, preferences, and personal spaces are treated with the utmost respect.' },
-    { icon: '◇', title: 'Precision', desc: 'Every service is thoughtfully coordinated and every detail handled with care.' },
-    { icon: '◉', title: 'Trust', desc: 'Verified professionals, dependable service, and a standard you can rely on.' },
-    { icon: '◆', title: 'Continuity', desc: 'Consistent care, seamlessly managed through one refined monthly experience.' },
+    { roman: 'I', icon: '◈', title: 'Discretion', desc: 'Your privacy, preferences, and personal spaces are treated with the utmost respect.' },
+    { roman: 'II', icon: '◇', title: 'Precision', desc: 'Every service is thoughtfully coordinated and every detail handled with care.' },
+    { roman: 'III', icon: '◉', title: 'Trust', desc: 'Verified professionals, dependable service, and a standard you can rely on.' },
+    { roman: 'IV', icon: '◆', title: 'Continuity', desc: 'Consistent care, seamlessly managed through one refined monthly experience.' },
   ]
 
   return (
-    <section id="about" className="about" ref={sectionRef}>
+    <section id="about" className="about" ref={sectionRef} aria-labelledby="about-heading">
       <div className="about__inner">
-        {/* Left Column */}
+        {/* Left Editorial Column */}
         <div className="about__left" data-reveal>
-          <span className="section-label">Our Story</span>
-          <h2 className="about__title">A More Refined<br />Way to Live</h2>
+          <span className="section-label">07 // OUR STORY</span>
+          <h2 id="about-heading" className="about__title">
+            A More Refined{' '}<br /><em>Way to Live</em>
+          </h2>
           <div className="about__divider" />
+
+          <div className="about__editorial-frame">
+            <img
+              src="/dark_luxury_mansion.jpg"
+              alt="Private Luxora estate residence at evening"
+              className="about__editorial-img"
+              width="1600"
+              height="900"
+              loading="lazy"
+              decoding="async"
+            />
+            <div className="about__editorial-scrim" />
+            <div className="about__editorial-meta">
+              <span>COLOMBO · EST. 2026</span>
+              <span>PRIVATE CONCIERGE</span>
+            </div>
+          </div>
+
           <p className="about__text">
             Luxury is not simply about what surrounds you.
             <br />
@@ -47,33 +105,36 @@ const About = () => {
             Our approach is simple: carefully selected professionals, thoughtfully managed services, and a consistent standard of care — all coordinated around your lifestyle.
           </p>
           <button
+            type="button"
             className="about__cta"
             id="about-our-vision-btn"
             onClick={() => setShowVisionModal(true)}
           >
             Our Vision
-            <span>→</span>
+            <span aria-hidden="true">→</span>
           </button>
         </div>
 
-        {/* Right Column */}
+        {/* Right Principles & Quote Column */}
         <div className="about__right">
           <h3 className="about__section-heading" data-reveal>Our Principles</h3>
           <div className="about__pillars">
             {pillars.map((p) => (
-              <div key={p.title} className="about__pillar" data-reveal>
-                <div className="about__pillar-icon">{p.icon}</div>
+              <article key={p.title} className="about__pillar" data-reveal>
+                <div className="about__pillar-head">
+                  <div className="about__pillar-icon" aria-hidden="true">{p.icon}</div>
+                  <span className="about__pillar-roman">{p.roman}</span>
+                </div>
                 <div>
                   <h4 className="about__pillar-title">{p.title}</h4>
                   <p className="about__pillar-desc">{p.desc}</p>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
 
-          {/* Quote */}
           <div className="about__quote" data-reveal>
-            <div className="about__quote-mark">&ldquo;</div>
+            <div className="about__quote-mark" aria-hidden="true">&ldquo;</div>
             <p>
               &ldquo;True luxury is not having more to manage.
               <br />
@@ -102,10 +163,10 @@ const About = () => {
             >
               ✕
             </button>
-            
+
             <div className="about-modal__badge">OUR VISION</div>
             <h2 id="about-vision-modal-title" className="about-modal__title">Excellence Refined</h2>
-            
+
             <div className="vision-modal__quote-wrap">
               <span className="vision-modal__quote-mark">“</span>
               <p className="vision-modal__quote">
@@ -115,6 +176,7 @@ const About = () => {
 
             <div className="about-modal__footer">
               <button
+                type="button"
                 className="about-modal__btn"
                 onClick={() => setShowVisionModal(false)}
               >
