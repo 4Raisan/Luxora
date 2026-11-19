@@ -41,14 +41,14 @@ const HomePage = () => (
   <>
     <ScrollProgress />
     <Navbar />
-    <main>
+    <main className="v2-home-main">
       <Hero />
-      <Stats />
       <Services />
-      <Plans />
-      <About />
-      <HowItWorks />
+      <Stats />
       <TrustSection />
+      <Plans />
+      <HowItWorks />
+      <About />
       <FinalCTA />
     </main>
     <Footer />
