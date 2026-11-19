@@ -1,6 +1,6 @@
 .footer {
-  background: #0d0d0d;
-  border-top: 1px solid rgba(201, 168, 76, 0.12);
+  background: linear-gradient(180deg, var(--v2-obsidian, #050507) 0%, #0b0c10 100%);
+  border-top: 1px solid rgba(201, 168, 76, 0.16);
 }
 
 .footer__inner {
@@ -513,6 +513,11 @@
   .about-modal__backdrop,
   .about-modal__window {
     animation: none;
+  }
+  .footer__top,
+  .footer__divider {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 

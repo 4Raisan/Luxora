@@ -1,8 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import './Footer.css'
+
+gsap.registerPlugin(ScrollTrigger)
 
 const Footer = () => {
   const year = new Date().getFullYear()
+  const footerRef = useRef(null)
   const [showAboutModal, setShowAboutModal] = useState(false)
   const [showVisionModal, setShowVisionModal] = useState(false)
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
@@ -11,6 +16,45 @@ const Footer = () => {
   const [showCookieModal, setShowCookieModal] = useState(false)
   const [showContactModal, setShowContactModal] = useState(false)
   const [shareFeedback, setShareFeedback] = useState('')
+
+  useLayoutEffect(() => {
+    const footer = footerRef.current
+    if (!footer) return undefined
+    const context = gsap.context(() => {
+      const media = gsap.matchMedia()
+      media.add('(prefers-reduced-motion: no-preference)', () => {
+        const top = footer.querySelector('.footer__top')
+        const divider = footer.querySelector('.footer__divider')
+        if (top) {
+          gsap.fromTo(
+            top,
+            { opacity: 0, y: 20 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.65,
+              ease: 'power3.out',
+              scrollTrigger: { trigger: footer, start: 'top 88%', once: true },
+            }
+          )
+        }
+        if (divider) {
+          gsap.fromTo(
+            divider,
+            { scaleX: 0, transformOrigin: 'center center' },
+            {
+              scaleX: 1,
+              duration: 0.75,
+              ease: 'power2.inOut',
+              scrollTrigger: { trigger: footer, start: 'top 86%', once: true },
+            }
+          )
+        }
+      })
+      return () => media.revert()
+    }, footer)
+    return () => context.revert()
+  }, [])
 
   useEffect(() => {
     const anyModalOpen = showAboutModal || showVisionModal || showPrivacyModal || showTermsModal || showMembershipTermsModal || showCookieModal || showContactModal
@@ -125,7 +169,7 @@ const Footer = () => {
   }
 
   return (
-    <footer className="footer" id="contact">
+    <footer className="footer" id="contact" ref={footerRef}>
       <div className="footer__inner">
         {/* Top */}
         <div className="footer__top">
