@@ -5137,74 +5137,6 @@ const CustomerDashboard = () => {
             </div>
 
             <div className="cd-support-actions" style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {import.meta.env.VITE_DEMO_CHECKOUT_ONLY !== 'true' && <>
-                {/* Option 1: PayHere */}
-                <div className="cd-easypay">
-                  <div className="cd-easypay__head">
-                    <span className="cd-easypay__title">CREDIT / DEBIT CARD</span>
-                    <span className="cd-easypay__badge">{payhereEnv === 'LIVE' ? 'PAYHERE LIVE' : 'PAYHERE SANDBOX'}</span>
-                  </div>
-                  <ActionButton
-                    type="button"
-                    className="cd-support-send-btn"
-                    loading={paymentBusy}
-                    loadingText="Preparing payment..."
-                    disabled={paymentBusy || !paymentGateways.payhere.enabled}
-                    onClick={() => startPayment('payhere', selectedPackageToBook)}
-                  >
-                    {paymentGateways.payhere.enabled ? 'PAY WITH PAYHERE' : 'PAYHERE NOT CONFIGURED'}
-                  </ActionButton>
-                  <small style={{ display: 'block', marginTop: '0.4rem', color: '#888', fontSize: '0.72rem' }}>
-                    {paymentGateways.payhere.enabled
-                      ? `Redirects to PayHere ${payhereEnv === 'LIVE' ? '' : 'sandbox '}hosted checkout. Package activates automatically upon verified server callback.`
-                      : 'Configure PayHere credentials and public HTTPS callback URLs to enable this gateway.'}
-                  </small>
-                  {payhereEnv !== 'LIVE' && (
-                    <details className="cd-easypay__help" style={{ marginTop: '0.4rem' }}>
-                      <summary>Test card details (sandbox)</summary>
-                      <div className="cd-easypay__help-body">
-                        <p>Use PayHere's official sandbox test cards — no real money is charged:</p>
-                        <ul>
-                          <li><strong>Visa:</strong> 4916217501611292</li>
-                          <li><strong>Mastercard:</strong> 5484181001001004</li>
-                          <li><strong>American Express:</strong> 345678901234564</li>
-                        </ul>
-                        <p>Use any future expiry date (e.g. 12/28), any 3-digit CVV, and name <strong>Test User</strong>.</p>
-                      </div>
-                    </details>
-                  )}
-                </div>
-
-                {/* Option 2: NOWPayments Crypto */}
-                <div className="cd-easypay" style={{ borderColor: 'rgba(212, 175, 55, 0.3)' }}>
-                  <div className="cd-easypay__head">
-                    <span className="cd-easypay__title">CRYPTOCURRENCY</span>
-                    <span className="cd-easypay__badge" style={{ background: 'rgba(212, 175, 55, 0.15)', color: '#d4af37' }}>USDT-BSC / BTC / ETH</span>
-                  </div>
-                  <ActionButton
-                    type="button"
-                    className="cd-support-send-btn"
-                    style={{ background: 'linear-gradient(135deg, #d4af37 0%, #aa8010 100%)', color: '#000', fontWeight: 'bold' }}
-                    loading={paymentBusy}
-                    loadingText="Preparing payment..."
-                    disabled={paymentBusy || !paymentGateways.nowpayments.enabled}
-                    onClick={() => startPayment('nowpayments', selectedPackageToBook)}
-                  >
-                    {paymentGateways.nowpayments.enabled ? 'PAY WITH CRYPTO (NOWPAYMENTS)' : 'NOWPAYMENTS NOT CONFIGURED'}
-                  </ActionButton>
-                  <small style={{ display: 'block', marginTop: '0.4rem', color: '#888', fontSize: '0.72rem' }}>
-                    {paymentGateways.nowpayments.enabled
-                      ? 'Live LKR to USD conversion with instant crypto invoice. Settles strictly after full blockchain finality.'
-                      : 'Configure the NOWPayments API key and IPN secret to enable this gateway.'}
-                  </small>
-                </div>
-
-              </>}
-
-              {/* Demo Payment — availability comes from /payments/mode
-                  (the same flag that gates the demo checkout endpoint), so a
-                  disabled deployment never shows a dead button. */}
-              {paymentGateways.demo?.enabled && (
               <div className="cd-easypay" style={{ borderColor: 'rgba(95, 189, 139, 0.35)' }}>
                 <div className="cd-easypay__head">
                   <span className="cd-easypay__title">DEMO PAYMENT</span>
@@ -5215,20 +5147,78 @@ const CustomerDashboard = () => {
                   className="cd-support-send-btn"
                   loading={paymentBusy}
                   loadingText="Processing demo payment..."
-                  disabled={paymentBusy}
+                  disabled={paymentBusy || !paymentGateways.demo?.enabled}
                   onClick={handleDemoCheckout}
                 >
                   Demo Pay
                 </ActionButton>
                 <small style={{ display: 'block', marginTop: '0.4rem', color: '#888', fontSize: '0.72rem' }}>
-                  Complete this purchase without a real financial charge. The selected package and service tokens will be added to your account.
+                  {paymentGateways.demo?.enabled
+                    ? 'Activate the selected package and add service coins without a financial charge.'
+                    : 'Demo payments are disabled on this backend.'}
                 </small>
               </div>
-              )}
-              {import.meta.env.VITE_DEMO_CHECKOUT_ONLY === 'true' && !paymentGateways.demo?.enabled && (
-                <p role="status">Demo Pay is unavailable. Check that the local demo backend is running.</p>
-              )}
 
+              {/* PayHere */}
+              <div className="cd-easypay">
+                <div className="cd-easypay__head">
+                  <span className="cd-easypay__title">CREDIT / DEBIT CARD</span>
+                  <span className="cd-easypay__badge">{payhereEnv === 'LIVE' ? 'PAYHERE LIVE' : 'PAYHERE SANDBOX'}</span>
+                </div>
+                <ActionButton
+                  type="button"
+                  className="cd-support-send-btn"
+                  loading={paymentBusy}
+                  loadingText="Preparing payment..."
+                  disabled={paymentBusy || !paymentGateways.payhere.enabled}
+                  onClick={() => startPayment('payhere', selectedPackageToBook)}
+                >
+                  {paymentGateways.payhere.enabled ? 'PAY WITH PAYHERE' : 'PAYHERE NOT CONFIGURED'}
+                </ActionButton>
+                <small style={{ display: 'block', marginTop: '0.4rem', color: '#888', fontSize: '0.72rem' }}>
+                  {paymentGateways.payhere.enabled
+                    ? `Redirects to PayHere ${payhereEnv === 'LIVE' ? '' : 'sandbox '}hosted checkout. Package activates automatically upon verified server callback.`
+                    : 'Configure PayHere credentials and public HTTPS callback URLs to enable this gateway.'}
+                </small>
+                {payhereEnv !== 'LIVE' && (
+                  <details className="cd-easypay__help" style={{ marginTop: '0.4rem' }}>
+                    <summary>Test card details (sandbox)</summary>
+                    <div className="cd-easypay__help-body">
+                      <p>Use PayHere's official sandbox test cards — no real money is charged:</p>
+                      <ul>
+                        <li><strong>Visa:</strong> 4916217501611292</li>
+                        <li><strong>Mastercard:</strong> 5484181001001004</li>
+                        <li><strong>American Express:</strong> 345678901234564</li>
+                      </ul>
+                      <p>Use any future expiry date (e.g. 12/28), any 3-digit CVV, and name <strong>Test User</strong>.</p>
+                    </div>
+                  </details>
+                )}
+              </div>
+
+              {/* NOWPayments Crypto */}
+              <div className="cd-easypay" style={{ borderColor: 'rgba(212, 175, 55, 0.3)' }}>
+                <div className="cd-easypay__head">
+                  <span className="cd-easypay__title">CRYPTOCURRENCY</span>
+                  <span className="cd-easypay__badge" style={{ background: 'rgba(212, 175, 55, 0.15)', color: '#d4af37' }}>USDT-BSC / BTC / ETH</span>
+                </div>
+                <ActionButton
+                  type="button"
+                  className="cd-support-send-btn"
+                  style={{ background: 'linear-gradient(135deg, #d4af37 0%, #aa8010 100%)', color: '#000', fontWeight: 'bold' }}
+                  loading={paymentBusy}
+                  loadingText="Preparing payment..."
+                  disabled={paymentBusy || !paymentGateways.nowpayments.enabled}
+                  onClick={() => startPayment('nowpayments', selectedPackageToBook)}
+                >
+                  {paymentGateways.nowpayments.enabled ? 'PAY WITH CRYPTO (NOWPAYMENTS)' : 'NOWPAYMENTS NOT CONFIGURED'}
+                </ActionButton>
+                <small style={{ display: 'block', marginTop: '0.4rem', color: '#888', fontSize: '0.72rem' }}>
+                  {paymentGateways.nowpayments.enabled
+                    ? 'Live LKR to USD conversion with instant crypto invoice. Settles strictly after full blockchain finality.'
+                    : 'Configure the NOWPayments API key and IPN secret to enable this gateway.'}
+                </small>
+              </div>
             </div>
           </div>
         </div>
