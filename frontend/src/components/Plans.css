@@ -447,3 +447,54 @@
     transition: none;
   }
 }
+.plans-offer {
+  position: fixed;
+  z-index: 900;
+  inset: auto auto calc(1rem + env(safe-area-inset-bottom)) 1rem;
+  width: min(20rem, calc(100vw - 6rem));
+  padding: 1rem 2.5rem 1rem 1rem;
+  background: #151417;
+  border: 1px solid var(--v2-hairline, #514424);
+  border-radius: 1rem;
+  box-shadow: 0 0.75rem 2rem #0008;
+}
+
+.plans-offer p {
+  margin: 0 0 0.5rem;
+  color: var(--white);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.plans-offer button {
+  border: 0;
+  background: none;
+  color: var(--gold-light);
+  cursor: pointer;
+}
+
+.plans-offer__close {
+  position: absolute;
+  inset: 0.25rem 0.25rem auto auto;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.25rem;
+}
+
+.plans-offer__link {
+  padding: 0;
+  min-height: 2rem;
+  text-decoration: underline;
+}
+
+.plan-card__promotion {
+  color: var(--success);
+  margin: 0.4rem 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.plan-card__original {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}

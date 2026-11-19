@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -77,6 +78,21 @@ const Plans = () => {
   const [activeCategory, setActiveCategory] = useState('auto')
   const [serverPlans, setServerPlans] = useState(null)
   const [plansUnavailable, setPlansUnavailable] = useState(false)
+  const [showOffer, setShowOffer] = useState(false)
+  const featuredOffer = (serverPlans || [])
+    .filter((plan) => Number(plan.promotion?.discountPct) > 0)
+    .sort((a, b) => b.promotion.discountPct - a.promotion.discountPct)[0]
+  const offerId = featuredOffer?.promotion.id
+
+  useEffect(() => {
+    if (offerId == null || sessionStorage.getItem('token') || sessionStorage.getItem(`home-offer-${offerId}`)) return
+    const timer = window.setTimeout(() => {
+      if (sessionStorage.getItem('token')) return
+      sessionStorage.setItem(`home-offer-${offerId}`, 'seen')
+      setShowOffer(true)
+    }, 4500)
+    return () => window.clearTimeout(timer)
+  }, [offerId])
 
   useEffect(() => {
     let cancelled = false
@@ -126,7 +142,9 @@ const Plans = () => {
           id: `srv-${plan.id}`,
           serverId: plan.id,
           tier: plan.title,
-          price: Number(plan.priceMonthly) || 0,
+          price: Number(plan.discountedPriceMonthly ?? plan.priceMonthly) || 0,
+          originalPrice: Number(plan.originalPriceMonthly ?? plan.priceMonthly) || 0,
+          promotion: plan.promotion,
           coins,
           highlight: Boolean(plan.recommended),
           description: plan.description || '',
@@ -166,10 +184,24 @@ const Plans = () => {
 
   return (
     <section id="plans" className="plans" ref={sectionRef} aria-labelledby="plans-heading">
+      {showOffer && featuredOffer && createPortal(
+        <aside className="plans-offer" aria-label="Current membership offer">
+          <button type="button" className="plans-offer__close" aria-label="Dismiss offer" onClick={() => setShowOffer(false)}>×</button>
+          <p role="status">Join Luxora and save {featuredOffer.promotion.discountPct}% on eligible packages.</p>
+          <button type="button" className="plans-offer__link" onClick={() => {
+            const category = CATEGORIES.find((item) => PACKAGE_TYPE_BY_CATEGORY[item.id] === featuredOffer.type)
+            if (category) setActiveCategory(category.id)
+            setShowOffer(false)
+            sectionRef.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })
+            document.getElementById('plans-heading')?.focus({ preventScroll: true })
+          }}>See offer and pricing →</button>
+        </aside>,
+        document.body,
+      )}
       <div className="plans__inner">
         <div className="plans__header" data-reveal>
           <span className="section-label">05 // ATELIER MEMBERSHIPS</span>
-          <h2 id="plans-heading" className="plans__title">
+          <h2 id="plans-heading" className="plans__title" tabIndex={-1}>
             Plans &amp; <em>Pricing</em>
           </h2>
           <p className="plans__subtitle">
@@ -230,9 +262,13 @@ const Plans = () => {
 
                 <div className="plan-card__header">
                   <p className="plan-card__tier">{plan.tier}</p>
+                  {plan.promotion && plan.originalPrice > plan.price && (
+                    <p className="plan-card__promotion">{plan.promotion.code ? `${plan.promotion.code} · ` : ''}{plan.promotion.discountPct}% off</p>
+                  )}
                   <div className="plan-card__price-wrap">
                     <span className="plan-card__currency">LKR</span>
                     <span className="plan-card__amount">{plan.price.toLocaleString()}</span>
+                    {plan.originalPrice > plan.price && <del className="plan-card__original">LKR {plan.originalPrice.toLocaleString()}</del>}
                   </div>
                   <p className="plan-card__period">
                     ✦ {plan.coins} {plan.coins === 1 ? 'coin' : 'coins'} per month
