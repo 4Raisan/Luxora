@@ -1,8 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { apiRequest } from '../services/api'
 import useScrollReveal from '../hooks/useScrollReveal'
 import './Plans.css'
+
+gsap.registerPlugin(ScrollTrigger)
 
 const AutoIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -62,19 +66,15 @@ const PACKAGE_TYPE_BY_CATEGORY = {
 
 const CheckIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-    <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
-
 
 const Plans = () => {
   const navigate = useNavigate()
   const sectionRef = useRef(null)
-  useScrollReveal(sectionRef, { stagger: 0.15 })
+  useScrollReveal(sectionRef, { stagger: 0.14 })
   const [activeCategory, setActiveCategory] = useState('auto')
-  // Live catalogue from the backend. No static price fallback: if the API is
-  // unreachable we show a neutral unavailable state rather than invented
-  // prices that contradict the real plans.
   const [serverPlans, setServerPlans] = useState(null)
   const [plansUnavailable, setPlansUnavailable] = useState(false)
 
@@ -86,8 +86,17 @@ const Plans = () => {
         if (Array.isArray(plans) && plans.length) setServerPlans(plans)
         else setPlansUnavailable(true)
       })
-      .catch(() => { if (!cancelled) setPlansUnavailable(true) })
-    return () => { cancelled = true }
+      .catch(() => {
+        if (!cancelled) setPlansUnavailable(true)
+      })
+      .finally(() => {
+        if (!cancelled) {
+          requestAnimationFrame(() => ScrollTrigger.refresh())
+        }
+      })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   useEffect(() => {
@@ -100,36 +109,38 @@ const Plans = () => {
     return () => window.removeEventListener('select-plan-category', handleSelectCategory)
   }, [])
 
+  useEffect(() => {
+    const id = requestAnimationFrame(() => ScrollTrigger.refresh())
+    return () => cancelAnimationFrame(id)
+  }, [activeCategory, serverPlans])
+
   const plansForCategory = (categoryId) => {
     if (!serverPlans) return null
     const packageType = PACKAGE_TYPE_BY_CATEGORY[categoryId]
     return serverPlans
-      // Package type is the display contract. Entitlements determine which
-      // services can be booked after purchase, but must not cause a Combo
-      // package to be displayed inside each individual care category.
       .filter((plan) => plan.type === packageType)
       .map((plan) => {
-          const ents = plan.entitlements || []
-          const coins = ents.reduce((total, entitlement) => total + (Number(entitlement.units) || 0), 0)
-          return {
-            id: `srv-${plan.id}`,
-            serverId: plan.id,
-            tier: plan.title,
-            price: Number(plan.priceMonthly) || 0,
-            coins,
-            highlight: Boolean(plan.recommended),
-            description: plan.description || '',
-            features: Array.isArray(plan.features) ? plan.features : [],
-            off: [],
-          }
-        })
+        const ents = plan.entitlements || []
+        const coins = ents.reduce((total, entitlement) => total + (Number(entitlement.units) || 0), 0)
+        return {
+          id: `srv-${plan.id}`,
+          serverId: plan.id,
+          tier: plan.title,
+          price: Number(plan.priceMonthly) || 0,
+          coins,
+          highlight: Boolean(plan.recommended),
+          description: plan.description || '',
+          features: Array.isArray(plan.features) ? plan.features : [],
+          off: [],
+        }
+      })
   }
 
   const currentPlans = plansForCategory(activeCategory) || (plansUnavailable ? [] : null)
 
   const handleGetStarted = (plan) => {
     try {
-      const catObj = CATEGORIES.find(c => c.id === activeCategory)
+      const catObj = CATEGORIES.find((c) => c.id === activeCategory)
       const fullPlan = { ...plan, categoryLabel: catObj ? catObj.label : 'Auto', cat: activeCategory }
       sessionStorage.setItem('selected_home_plan', JSON.stringify(fullPlan))
 
@@ -146,21 +157,27 @@ const Plans = () => {
     }
   }
 
-  return (
-    <section id="plans" className="plans" ref={sectionRef}>
-      <div className="plans__inner">
+  const handleCardPointerMove = (e) => {
+    if (window.matchMedia('(pointer: coarse)').matches) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    e.currentTarget.style.setProperty('--card-mouse-x', `${e.clientX - rect.left}px`)
+    e.currentTarget.style.setProperty('--card-mouse-y', `${e.clientY - rect.top}px`)
+  }
 
-        {/* Header */}
+  return (
+    <section id="plans" className="plans" ref={sectionRef} aria-labelledby="plans-heading">
+      <div className="plans__inner">
         <div className="plans__header" data-reveal>
-          <span className="section-label">Our Packages</span>
-          <h2 className="plans__title">Plans &amp; Pricing</h2>
+          <span className="section-label">05 // ATELIER MEMBERSHIPS</span>
+          <h2 id="plans-heading" className="plans__title">
+            Plans &amp; <em>Pricing</em>
+          </h2>
           <p className="plans__subtitle">
             Choose from our curated service packages — transparent pricing,
             no hidden fees, and the full Luxora standard of care.
           </p>
         </div>
 
-        {/* Category Tabs */}
         <div className="plans__tabs" role="tablist" aria-label="Service plan categories" data-reveal>
           {CATEGORIES.map((cat) => (
             <button
@@ -178,8 +195,6 @@ const Plans = () => {
           ))}
         </div>
 
-        {/* Cards — live server data; neutral states while loading or when
-            the catalogue cannot be reached (never invented prices) */}
         {currentPlans === null ? (
           <div className="plans__grid">
             <div className="plan-card" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2.5rem 1.5rem', color: '#888' }}>
@@ -189,18 +204,22 @@ const Plans = () => {
         ) : currentPlans.length === 0 ? (
           <div className="plans__grid">
             <div className="plan-card" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2.5rem 1.5rem', color: '#888' }}>
-              Plans are currently unavailable for {CATEGORIES.find(c => c.id === activeCategory)?.label || 'this category'}.
+              Plans are currently unavailable for {CATEGORIES.find((c) => c.id === activeCategory)?.label || 'this category'}.
               <br />
               <small>Please check back shortly.</small>
             </div>
           </div>
         ) : (
-          <div className="plans__grid">
+          <div
+            className={`plans__grid ${currentPlans.length === 1 ? 'plans__grid--single' : currentPlans.length === 2 ? 'plans__grid--double' : ''}`}
+            key={activeCategory}
+          >
             {currentPlans.map((plan) => (
               <div
                 key={plan.id}
                 id={`plan-${plan.id}`}
                 className={`plan-card ${plan.highlight ? 'plan-card--featured' : ''}`}
+                onPointerMove={handleCardPointerMove}
               >
                 {plan.highlight && (
                   <div className="plan-card__badge">
@@ -215,7 +234,9 @@ const Plans = () => {
                     <span className="plan-card__currency">LKR</span>
                     <span className="plan-card__amount">{plan.price.toLocaleString()}</span>
                   </div>
-                  <p className="plan-card__period">{plan.coins} {plan.coins === 1 ? 'coin' : 'coins'} per month</p>
+                  <p className="plan-card__period">
+                    ✦ {plan.coins} {plan.coins === 1 ? 'coin' : 'coins'} per month
+                  </p>
                   {plan.description && <p className="plan-card__summary">{plan.description}</p>}
                 </div>
 
@@ -231,11 +252,12 @@ const Plans = () => {
                 </ul>
 
                 <button
+                  type="button"
                   className="plan-card__cta"
                   id={`plan-${plan.id}-btn`}
                   onClick={() => handleGetStarted(plan)}
                 >
-                  Get Started
+                  Get Started →
                 </button>
               </div>
             ))}

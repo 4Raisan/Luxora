@@ -34,6 +34,12 @@ img[src$="luxora-logo.png"] {
   --line: rgba(255,255,255,.09);
   --success: #5fbd8b;
   --danger: #df7a78;
+  --v2-obsidian: #050507;
+  --v2-carbon: #0a0b0e;
+  --v2-surface: #111217;
+  --v2-gold-gradient: linear-gradient(135deg, #f5e2ae 0%, #c9a84c 46%, #8f6d20 100%);
+  --v2-hairline: rgba(201, 168, 76, 0.18);
+  --v2-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Shared product primitives. Pages use these tokens rather than a second UI kit. */
@@ -50,6 +56,7 @@ img[src$="luxora-logo.png"] {
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 76px;
   max-width: 100vw;
   overflow-x: hidden;
 }
@@ -202,4 +209,19 @@ textarea:focus-visible,
   letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--gold);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal],
+  .hero__content,
+  .brand-intro__word,
+  .brand-intro__portal-frame,
+  .service-card,
+  .stat,
+  .trust-card,
+  .final-cta__monolith,
+  .footer__top {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
 }
